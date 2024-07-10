@@ -1,0 +1,7 @@
+.custom-row:hover .custom-cell {
+    background-color: #fff7db;
+  }
+  
+.custom-cell {
+    background-color: #fffcf2;
+}
