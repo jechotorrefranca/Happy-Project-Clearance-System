@@ -24,6 +24,7 @@ function CreateClass() {
   const [subjects, setSubjects] = useState([
     { subject: "", teacher: "", teacherUid: "" },
   ]);
+  
   const [teachers, setTeachers] = useState([]);
   const [selectedStudentOptions, setSelectedStudentOptions] = useState([]);
   const [allStudentOptions, setAllStudentOptions] = useState([]);
