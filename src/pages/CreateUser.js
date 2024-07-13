@@ -5,6 +5,10 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../components/AuthContext";
+import { motion } from 'framer-motion';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function CreateUser() {
   const [email, setEmail] = useState("");
@@ -59,7 +63,7 @@ function CreateUser() {
         (role === "Office of The Dean" || role === "Student Council") &&
         !department)
     ) {
-      alert("Please fill in all required fields.");
+      showWarnToast("Please fill in all required fields");
       return;
     }
 
@@ -99,107 +103,175 @@ function CreateUser() {
         },
       });
 
-      alert("User created successfully!");
-      navigate("/user-management"); 
+      showSuccessToast("User created successfully!");
+      setEmail('');
+      setPassword('');
+      setRole('');
+      setDepartment('');
+      setEducationLevel('');
     } catch (error) {
       console.error("Error creating user: ", error);
-      alert("Error creating user. Please try again.");
+      showFailedToast("Error creating user. Please try again");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const showSuccessToast = (msg) => toast.success(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
+    const showFailedToast = (msg) => toast.error(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });
+
+    const showWarnToast = (msg) => toast.warn(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });      
+
   return (
     <Sidebar>
-      <div className="container mx-auto p-4">
-        <h2 className="text-2xl font-semibold mb-4">Create User</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700">Email:</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700">Password:</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700">Education Level:</label>
-            <select
-              value={educationLevel}
-              onChange={(e) => setEducationLevel(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="">Select Education Level</option>
-              <option value="elementary">Elementary</option>
-              <option value="junior high school">Junior High School</option>
-              <option value="senior high school">Senior High School</option>
-              <option value="college">College</option>
-            </select>
-          </div>
+      <ToastContainer/>
+      <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
+        <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
+          <h2 className="text-3xl font-bold text-blue-950">Create User</h2>
+        </div>
 
-          <div>
-            <label className="block text-gray-700">Role:</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="">Select Role</option>
-              {educationLevel === "college"
-                ? collegeRoles.map((collegeRole) => (
-                    <option key={collegeRole} value={collegeRole}>
-                      {collegeRole}
-                    </option>
-                  ))
-                : otherRoles.map((otherRole) => (
-                    <option key={otherRole} value={otherRole}>
-                      {otherRole}
-                    </option>
-                  ))}
-            </select>
-          </div>
+        <div className="p-5">
+          <div className="bg-white p-5 rounded-xl overflow-auto">
+            <form onSubmit={handleSubmit} className="space-y-4">
 
-          {educationLevel === "college" &&
-            (role === "Office of The Dean" || role === "Student Council") && (
-              <div>
-                <label className="block text-gray-700">Department:</label>
-                <select
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-                >
-                  <option value="">Select Department</option>
-                  {collegeDepartments.map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
-                    </option>
-                  ))}
-                </select>
+              <div className="mb-4 sm:flex gap-4">
+                <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                    <label className="block text-gray-700">Email:</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                    />
+                  </div>
+
+                  <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                    <label className="block text-gray-700">Password:</label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                    />
+                  </div>
+
               </div>
-            )}
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-            disabled={isLoading}
-          >
-            {isLoading ? "Creating..." : "Create User"}
-          </button>
-        </form>
+
+              <div className="mb-4 sm:flex gap-4">
+                <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                  <label className="block text-gray-700">Education Level:</label>
+                  <select
+                    value={educationLevel}
+                    onChange={(e) => setEducationLevel(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                  >
+                    <option value="">Select Education Level</option>
+                    <option value="elementary">Elementary</option>
+                    <option value="junior high school">Junior High School</option>
+                    <option value="senior high school">Senior High School</option>
+                    <option value="college">College</option>
+                  </select>
+                </div>
+
+                <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                  <label className="block text-gray-700">Role:</label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                  >
+                    <option value="">Select Role</option>
+                    {educationLevel === "college"
+                      ? collegeRoles.map((collegeRole) => (
+                          <option key={collegeRole} value={collegeRole}>
+                            {collegeRole}
+                          </option>
+                        ))
+                      : otherRoles.map((otherRole) => (
+                          <option key={otherRole} value={otherRole}>
+                            {otherRole}
+                          </option>
+                        ))}
+                  </select>
+                </div>
+
+                {educationLevel === "college" &&
+                  (role === "Office of The Dean" || role === "Student Council") && (
+                    <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                      <label className="block text-gray-700">Department:</label>
+                      <select
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                      >
+                        <option value="">Select Department</option>
+                        {collegeDepartments.map((dept) => (
+                          <option key={dept} value={dept}>
+                            {dept}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+              </div>
+
+              
+                <div className="flex justify-center">
+                  <motion.button
+                    whileHover={{scale: 1.03}}
+                    whileTap={{scale: 0.95}}              
+                    type="submit"
+                    className="px-4 py-3 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 text-xl font-semibold w-[50%]"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating..." : "Create User"}
+                  </motion.button>
+
+                </div>
+            </form>
+
+          </div>
+        </div>
+
+
+
       </div>
     </Sidebar>
   );

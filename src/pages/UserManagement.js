@@ -15,13 +15,17 @@ import {
   faLock,
   faUnlock,
   faSort,
-  faPlus,
+  faCirclePlus,
   faSearch,
   faFilter,
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import Modal from "../components/Modal";
 import { Link } from "react-router-dom";
+import { motion } from 'framer-motion';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -34,6 +38,31 @@ function UserManagement() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const showSuccessToast = (msg) => toast.success(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
+    const showFailedToast = (msg) => toast.error(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -99,12 +128,10 @@ function UserManagement() {
         )
       );
 
-      alert(
-        `User account ${!currentStatus ? "locked" : "unlocked"} successfully!`
-      );
+      showSuccessToast(`User account ${!currentStatus ? "locked" : "unlocked"} successfully!`);
     } catch (error) {
       console.error("Error updating user status:", error);
-      alert("Error updating user status. Please try again later.");
+      showFailedToast("Error updating user status. Please try again later");
     }
   };
 
@@ -151,7 +178,7 @@ function UserManagement() {
       );
 
       setSelectedUsers([]);
-      alert(`Selected accounts ${bulkAction}ed successfully!`);
+      showSuccessToast(`Selected accounts ${bulkAction}ed successfully!`);
     } catch (error) {
       console.error(`Error during bulk ${bulkAction}:`, error);
       alert(`Error during bulk action. Please try again later.`);
@@ -175,200 +202,245 @@ function UserManagement() {
 
   return (
     <Sidebar>
-      <div className="bg-gray-50 min-h-screen p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          User Management
-        </h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="relative">
-            <FontAwesomeIcon
-              icon={faSearch}
-              className="absolute left-3 top-3 text-gray-400"
-            />
-            <input
-              type="text"
-              placeholder="Search by email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
-            />
-          </div>
-          <div className="relative">
-            <FontAwesomeIcon
-              icon={faFilter}
-              className="absolute left-3 top-3 text-gray-400"
-            />
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
-            >
-              <option value="">All Roles</option>
-              {availableRoles.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex justify-end space-x-2">
-            <button
-              onClick={handleClearFilters}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md transition duration-300 ease-in-out"
-            >
-              Clear Filters
-            </button>
-            <Link to="/create-user">
-              <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition duration-300 ease-in-out">
-                <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                Create User
-              </button>
-            </Link>
-          </div>
+      <ToastContainer/>
+      <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
+        <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
+          <h2 className="text-3xl font-bold text-blue-950">User Management</h2>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <FontAwesomeIcon
-              icon={faSpinner}
-              spin
-              size="3x"
-              className="text-blue-500"
-            />
-          </div>
-        ) : users.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500 text-lg">
-              No users found matching your criteria.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 border-gray-300">
-              <thead className="bg-gray-200 border">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
+        <div className="p-5">
+          <div className="bg-white p-5 rounded-xl overflow-auto">
+
+            <div className="mb-4 sm:flex gap-4">
+
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0 flex justify-center items-center">
+                <div className="relative w-full">
+                  <FontAwesomeIcon
+                    icon={faSearch}
+                    className="absolute left-3 top-3 text-gray-400"
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Search by email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                  />
+                </div>
+
+              </div>
+
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0 flex justify-center items-center">
+                <div className="relative w-full">
+                  <FontAwesomeIcon
+                    icon={faFilter}
+                    className="absolute left-3 top-3 text-gray-400"
+                  />
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.length === users.length}
-                      onChange={handleSelectAllUsers}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
-                  >
-                    Email
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
-                  >
-                    Role
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer"
-                    onClick={handleSortStatus}
-                  >
-                    Status{" "}
-                    <FontAwesomeIcon
-                      icon={faSort}
-                      className={`ml-1 ${
-                        sortStatusAsc !== null
-                          ? sortStatusAsc
-                            ? "transform rotate-180"
-                            : ""
-                          : ""
-                      }`}
-                    />
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers.includes(user.id)}
-                        onChange={() => handleSelectUser(user.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {user.email}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{user.role}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.isLocked
-                            ? "bg-red-100 text-red-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
+                    <option value="">All Roles</option>
+                    {availableRoles.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+              </div>
+
+
+
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0 flex gap-4 justify-center">
+                <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}                
+                  onClick={handleClearFilters}
+                  className="w-full bg-[#fff9e5] hover:bg-[#f1ead0] text-gray-800 px-4 py-2 rounded-md"
+                >
+                  Clear Filters
+                </motion.button>
+
+                <Link to="/create-user" className="w-full">
+                  <motion.button
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}                  
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex gap-1 justify-center items-center">
+                    <FontAwesomeIcon icon={faCirclePlus} className="text-xl"/>
+                    Create User
+                  </motion.button>
+                </Link>
+
+              </div>
+
+            </div>
+
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <FontAwesomeIcon
+                  icon={faSpinner}
+                  spin
+                  size="3x"
+                  className="text-blue-500"
+                />
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-lg">
+                  No users found matching your criteria.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 border-gray-300">
+                  <thead className="bg-blue-200 border">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider "
                       >
-                        {user.isLocked ? "Locked" : "Unlocked"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleLockUnlock(user.id, user.isLocked)}
-                        className={`px-3 py-1 rounded-md transition duration-300 ease-in-out ${
-                          user.isLocked
-                            ? "bg-green-500 hover:bg-green-600 text-white"
-                            : "bg-red-500 hover:bg-red-600 text-white"
-                        }`}
-                      >
-                        <FontAwesomeIcon
-                          icon={user.isLocked ? faUnlock : faLock}
-                          className="mr-1"
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.length === users.length}
+                          onChange={handleSelectAllUsers}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        {user.isLocked ? "Unlock" : "Lock"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                        
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
+                      >
+                        Email
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                      >
+                        Role
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer"
+                        onClick={handleSortStatus}
+                      >
+                        Status{" "}
+                        <FontAwesomeIcon
+                          icon={faSort}
+                          className={`ml-1 ${
+                            sortStatusAsc !== null
+                              ? sortStatusAsc
+                                ? "transform rotate-180"
+                                : ""
+                              : ""
+                          }`}
+                        />
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {users.map((user) => (
+                      <tr key={user.id} className="bg-blue-50 hover:bg-blue-100">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.includes(user.id)}
+                            onChange={() => handleSelectUser(user.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {user.email}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">{user.role}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              user.isLocked
+                                ? "bg-red-100 text-red-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
+                            {user.isLocked ? "Locked" : "Unlocked"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <motion.button
+                          whileHover={{scale: 1.03}}
+                          whileTap={{scale: 0.95}}                          
+                            onClick={() => handleLockUnlock(user.id, user.isLocked)}
+                            className={`px-3 py-1 rounded-md ${
+                              user.isLocked
+                                ? "bg-green-500 hover:bg-green-600 text-white"
+                                : "bg-red-500 hover:bg-red-600 text-white"
+                            }`}
+                          >
+                            <FontAwesomeIcon
+                              icon={user.isLocked ? faUnlock : faLock}
+                              className="mr-1"
+                            />
+                            {user.isLocked ? "Unlock" : "Lock"}
+                          </motion.button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-        <div className="mt-4 flex justify-between items-center">
-          <div>
-            <button
-              onClick={() => handleBulkLockUnlock("lock")}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md mr-2 transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={selectedUsers.length === 0}
-            >
-              <FontAwesomeIcon icon={faLock} className="mr-2" /> Lock Selected
-            </button>
-            <button
-              onClick={() => handleBulkLockUnlock("unlock")}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={selectedUsers.length === 0}
-            >
-              <FontAwesomeIcon icon={faUnlock} className="mr-2" /> Unlock
-              Selected
-            </button>
+            <div className="mt-4 flex justify-between items-center">
+              <div className="flex w-full gap-4">
+
+                <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}                
+                  onClick={() => handleBulkLockUnlock("lock")}
+                  className="flex justify-center items-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md mr-2 disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                  disabled={selectedUsers.length === 0}
+                >
+                  <FontAwesomeIcon icon={faLock} className="mr-2" /> 
+                  <p>
+                    Lock Selected
+                  </p>
+                </motion.button>
+
+                <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}                
+                  onClick={() => handleBulkLockUnlock("unlock")}
+                  className="flex justify-center items-center bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                  disabled={selectedUsers.length === 0}
+                >
+                  <FontAwesomeIcon icon={faUnlock} className="mr-2" />
+                  <p>
+                    Unlock Selected
+                  </p>
+                </motion.button>
+
+              </div>
+
+              <div>{/* Pagination dito mamaya */}</div>
+            </div>
+
           </div>
-          <div>{/* Pagination dito mamaya */}</div>
         </div>
+
+
 
         <Modal isOpen={isConfirmModalOpen} onClose={closeConfirmModal}>
           <div className="p-6">
@@ -377,24 +449,31 @@ function UserManagement() {
               Are you sure you want to <strong>{bulkAction}</strong> the
               selected accounts?
             </p>
-            <div className="mt-6 flex justify-end">
-              <button
+
+            <div className="mt-6 flex justify-around">
+              <motion.button
+              whileHover={{scale: 1.03}}
+              whileTap={{scale: 0.95}}
                 onClick={closeConfirmModal}
-                className="mr-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition duration-300 ease-in-out"
+                className="mr-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 w-full"
               >
                 Cancel
-              </button>
-              <button
+              </motion.button>
+
+              <motion.button
+              whileHover={{scale: 1.03}}
+              whileTap={{scale: 0.95}}              
                 onClick={confirmBulkAction}
-                className={`px-4 py-2 text-white rounded transition duration-300 ease-in-out ${
+                className={`px-4 py-2 text-white rounded w-full ${
                   bulkAction === "lock"
                     ? "bg-red-500 hover:bg-red-600"
                     : "bg-green-500 hover:bg-green-600"
                 }`}
               >
                 Confirm
-              </button>
+              </motion.button>
             </div>
+
           </div>
         </Modal>
       </div>

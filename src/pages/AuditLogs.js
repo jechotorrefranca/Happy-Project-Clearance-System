@@ -3,6 +3,7 @@ import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import Sidebar from "../components/Sidebar";
 import moment from "moment";
+import { motion } from 'framer-motion';
 
 function AuditLogs() {
   const [logs, setLogs] = useState([]);
@@ -72,96 +73,119 @@ function AuditLogs() {
 
   return (
     <Sidebar>
-      <div className="container mx-auto p-6">
-        <h2 className="text-3xl font-bold mb-6">Audit Logs</h2>
+      <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
+        <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
+          <h2 className="text-3xl font-bold text-blue-950">Audit Logs</h2>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div>
-            <label htmlFor="filterAction" className="block text-sm font-medium text-gray-700 mb-1">
-              Filter by Action
-            </label>
-            <select
-              id="filterAction"
-              value={filterAction}
-              onChange={(e) => setFilterAction(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="all">All Actions</option>
-              <option value="login_success">Successful Login</option>
-              <option value="login_failed">Failed Login</option>
-            </select>
-          </div>
+        <div className="p-5">
+          <div className="bg-white p-5 rounded-xl overflow-auto">
 
-          <div>
-            <label htmlFor="searchEmail" className="block text-sm font-medium text-gray-700 mb-1">
-              Search by Email
-            </label>
-            <input
-              type="text"
-              id="searchEmail"
-              value={searchEmail}
-              onChange={(e) => setSearchEmail(e.target.value)}
-              placeholder="Enter email"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            />
-          </div>
+            <div className="sm:mb-4 sm:flex gap-4">
 
-          <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Start Date
-            </label>
-            <input
-              type="date"
-              id="startDate"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            />
-          </div>
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                <label htmlFor="filterAction" className="block text-sm font-medium text-gray-700 mb-1">
+                  Filter by Action
+                </label>
+                <select
+                  id="filterAction"
+                  value={filterAction}
+                  onChange={(e) => setFilterAction(e.target.value)}
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                >
+                  <option value="all">All Actions</option>
+                  <option value="login_success">Successful Login</option>
+                  <option value="login_failed">Failed Login</option>
+                </select>
+              </div>
 
-          <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-              End Date
-            </label>
-            <input
-              type="date"
-              id="endDate"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            />
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                <label htmlFor="searchEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                  Search by Email
+                </label>
+                <input
+                  type="text"
+                  id="searchEmail"
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  placeholder="Enter email"
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                />
+              </div>
+
+              <div className="sm:min-w-[25%] bg-blue-100 p-5 rounded mb-2 sm:mb-0 flex items-center">
+                <motion.button
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}                
+                  onClick={handleReset}
+                  className="px-4 py-2 bg-[#fff9e5] hover:bg-[#f1ead0] text-gray-800 rounded focus:outline-none focus:ring focus:border-blue-300 w-full"
+                >
+                  Reset Filters
+                </motion.button>
+              </div>
+
+
+            </div>
+
+            <div className="sm:mb-4 sm:flex gap-4">
+
+             <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+               <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                 Start Date
+               </label>
+               <input
+                 type="date"
+                 id="startDate"
+                 value={startDate}
+                 onChange={(e) => setStartDate(e.target.value)}
+                 className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+               />
+             </div>
+
+             <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+               <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+                 End Date
+               </label>
+               <input
+                 type="date"
+                 id="endDate"
+                 value={endDate}
+                 onChange={(e) => setEndDate(e.target.value)}
+                 className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+               />
+             </div>
+
+            </div>
+
+            <div className="w-full overflow-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
+                  <tr>
+                    <th className="py-3 px-4 border-b border-blue-300 bg-blue-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                    <th className="py-3 px-4 border-b border-blue-300 bg-blue-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                    <th className="py-3 px-4 border-b border-blue-300 bg-blue-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action Type</th>
+                    <th className="py-3 px-4 border-b border-blue-300 bg-blue-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log) => (
+                    <tr key={log.id} className="hover:bg-blue-100 bg-blue-50">
+                      <td className="py-2 px-4 border-b border-gray-200">{moment(log.timestamp.toDate()).format("YYYY-MM-DD HH:mm:ss")}</td>
+                      <td className="py-2 px-4 border-b border-gray-200">{log.userId}</td>
+                      <td className="py-2 px-4 border-b border-gray-200">{log.actionType}</td>
+                      <td className="py-2 px-4 border-b border-gray-200">{log.email}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+            </div>
+
+
           </div>
         </div>
 
-        <div className="mb-6">
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 focus:outline-none focus:ring focus:border-blue-300"
-          >
-            Reset Filters
-          </button>
-        </div>
 
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-              <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-              <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action Type</th>
-              <th className="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => (
-              <tr key={log.id} className="hover:bg-gray-50">
-                <td className="py-2 px-4 border-b border-gray-200">{moment(log.timestamp.toDate()).format("YYYY-MM-DD HH:mm:ss")}</td>
-                <td className="py-2 px-4 border-b border-gray-200">{log.userId}</td>
-                <td className="py-2 px-4 border-b border-gray-200">{log.actionType}</td>
-                <td className="py-2 px-4 border-b border-gray-200">{log.email}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </Sidebar>
   );

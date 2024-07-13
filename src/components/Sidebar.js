@@ -7,16 +7,15 @@ import {
   ClipboardDocumentCheckIcon,
   ClockIcon,
   InboxIcon,
-  Cog6ToothIcon,
   ShieldCheckIcon,
   HomeIcon,
   DocumentCheckIcon,
   UsersIcon,
-  UserIcon,
   XMarkIcon,
   Bars3Icon,
   CalendarIcon,
-  CreditCardIcon
+  CreditCardIcon,
+  LockClosedIcon
 } from '@heroicons/react/24/outline';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import {
@@ -64,7 +63,7 @@ const navigationOptions = {
       icon: ClockIcon,
     },
     { name: "Messages", href: "/view-messages", icon: InboxIcon },
-    { name: "System Settings", href: "#", icon: Cog6ToothIcon },
+    { name: "Change Password", href: "/settings", icon: LockClosedIcon },
   ],
   "super-admin": [
     {
@@ -99,7 +98,7 @@ const navigationOptions = {
       icon: ClockIcon,
     },
     { name: "Messages", href: "/view-messages", icon: InboxIcon },
-    { name: "System Settings", href: "#", icon: Cog6ToothIcon },
+    { name: "Change Password", href: "/settings", icon: LockClosedIcon },
   ],
   faculty: [
     {
@@ -128,12 +127,9 @@ const navigationOptions = {
       href: "/student-master-list",
       icon: UsersIcon,
     },
-    {
-      name: "Account Settings",
-      href: "#",
-      icon: Cog6ToothIcon,
-      children: [],
-    },
+    { name: "Change Password", 
+      href: "/settings", 
+      icon: LockClosedIcon },
   ],
   student: [
     {
@@ -146,12 +142,9 @@ const navigationOptions = {
       href: "/view-messages-student",
       icon: InboxIcon,
     },
-    {
-      name: "Account Settings",
-      href: "#",
-      icon: Cog6ToothIcon,
-      children: [],
-    },
+    { name: "Change Password", 
+      href: "/settings", 
+      icon: LockClosedIcon },
   ],
   "Character Renewal Office": [
     {
@@ -175,7 +168,7 @@ const navigationOptions = {
       icon: UsersIcon,
     },
     { name: "Messages", href: "/view-messages", icon: InboxIcon },
-    { name: "Account Settings", href: "#", icon: Cog6ToothIcon },
+    { name: "Change Password", href: "/settings", icon: LockClosedIcon },
   ],
   "Finance": [
     {
@@ -199,7 +192,7 @@ const navigationOptions = {
       icon: UsersIcon,
     },
     { name: "Messages", href: "/view-messages", icon: InboxIcon },
-    { name: "Account Settings", href: "#", icon: Cog6ToothIcon },
+    { name: "Change Password", href: "/settings", icon: LockClosedIcon },
   ],
   "Guidance Office": [
     {
@@ -223,7 +216,7 @@ const navigationOptions = {
       icon: UsersIcon,
     },
     { name: "Messages", href: "/view-messages", icon: InboxIcon },
-    { name: "Account Settings", href: "#", icon: Cog6ToothIcon },
+    { name: "Change Password", href: "/settings", icon: LockClosedIcon },
   ],
   "Office of The Dean": [
     {
@@ -252,7 +245,7 @@ const navigationOptions = {
       icon: CalendarIcon,
     },
     { name: "Messages", href: "/view-messages", icon: InboxIcon },
-    { name: "Account Settings", href: "#", icon: Cog6ToothIcon },
+    { name: "Change Password", href: "/settings", icon: LockClosedIcon },
   ],
   "Student Council": [
     {
@@ -271,7 +264,7 @@ const navigationOptions = {
       icon: CalendarIcon,
     },
     { name: "Messages", href: "/view-messages", icon: InboxIcon },
-    { name: "Account Settings", href: "#", icon: Cog6ToothIcon },
+    { name: "Change Password", href: "/settings", icon: LockClosedIcon },
   ],
   "OSAS": [
     {
@@ -300,7 +293,7 @@ const navigationOptions = {
       icon: CalendarIcon,
     },
     { name: "Messages", href: "/view-messages", icon: InboxIcon },
-    { name: "Account Settings", href: "#", icon: Cog6ToothIcon },
+    { name: "Change Password", href: "/settings", icon: LockClosedIcon },
   ]
 };
 
@@ -321,7 +314,7 @@ const defaultNavigation = [
     href: "/office-clearance-manual",
     icon: AcademicCapIcon,
   },
-  { name: "Office Settings", href: "#", icon: Cog6ToothIcon },
+  { name: "Change Password", href: "/settings", icon: LockClosedIcon },
 ];
 
 const teams = [
@@ -387,7 +380,7 @@ export default function Sidebar({ children }) {
         }
       }
     });
-  }, []);
+  }, [userRole]);
 
   const handleLogout = async () => {
     try {
@@ -495,11 +488,10 @@ export default function Sidebar({ children }) {
                         {userRole && (
                           <nav className="flex flex-1 flex-col">
                             <ul
-                              role="list"
                               className="flex flex-1 flex-col gap-y-7"
                             >
                               <li>
-                                <ul role="list" className="-mx-2 space-y-1">
+                                <ul className="-mx-2 space-y-1">
                                   {navigation.map((item) => (
                                     <li key={item.name}>
                                       <a
@@ -533,7 +525,6 @@ export default function Sidebar({ children }) {
                                     Your teams
                                   </div>
                                   <ul
-                                    role="list"
                                     className="-mx-2 mt-2 space-y-1"
                                   >
                                     {teams.map((team) => (
@@ -588,9 +579,9 @@ export default function Sidebar({ children }) {
                 </div>
                 {userRole && (
                   <nav className="flex flex-1 flex-col">
-                    <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                    <ul className="flex flex-1 flex-col gap-y-7">
                       <li>
-                        <ul role="list" className="-mx-2 space-y-1">
+                        <ul className="-mx-2 space-y-1">
                           {navigation.map((item) => (
                             <li key={item.name}>
                               <a
@@ -622,7 +613,7 @@ export default function Sidebar({ children }) {
                           <div className="text-xs font-semibold leading-6 text-gray-900">
                             Your teams
                           </div>
-                          <ul role="list" className="-mx-2 mt-2 space-y-1">
+                          <ul className="-mx-2 mt-2 space-y-1">
                             {teams.map((team) => (
                               <li key={team.name}>
                                 <a

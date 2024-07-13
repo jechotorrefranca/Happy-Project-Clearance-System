@@ -12,6 +12,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import Select from "react-select";
 
 import Sidebar from "../components/Sidebar";
+import { motion } from 'framer-motion';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faXmark, faPlus } from "@fortawesome/free-solid-svg-icons";
+
 
 function UpdateClass() {
   const { classId } = useParams();
@@ -27,9 +31,7 @@ function UpdateClass() {
   const [teachers, setTeachers] = useState([]);
   const [selectedStudentOptions, setSelectedStudentOptions] = useState([]);
   const [allStudentOptions, setAllStudentOptions] = useState([]);
-  const [originalSelectedStudentIds, setOriginalSelectedStudentIds] = useState(
-    []
-  );
+  const [originalSelectedStudentIds, setOriginalSelectedStudentIds] = useState([]);
 
   useEffect(() => {
     const fetchClassData = async () => {
@@ -199,7 +201,6 @@ function UpdateClass() {
         await Promise.all(resetStudentPromises);
         await deleteDoc(classDocRef);
 
-        alert("Class deleted successfully!");
         navigate("/classes");
       } catch (error) {
         console.error("Error deleting class:", error);
@@ -247,185 +248,228 @@ function UpdateClass() {
 
   return (
     <Sidebar>
-      <div className="container mx-auto p-4">
-        <h2 className="text-2xl font-semibold mb-4">Update Class</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700">Education Level</label>
-            <select
-              value={educationLevel}
-              onChange={(e) => {
-                setEducationLevel(e.target.value);
-                setGradeLevel("");
-              }}
-              required
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="" disabled>
-                Select education level
-              </option>
-              <option value="elementary">Elementary</option>
-              <option value="junior high school">Junior High School</option>
-              <option value="senior high school">Senior High School</option>
-              <option value="college">College</option>
-            </select>
-          </div>
 
-          <div>
-            <label className="block text-gray-700">Grade Level</label>
-            <select
-              value={gradeLevel}
-              onChange={(e) => setGradeLevel(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-              disabled={!educationLevel}
-            >
-              <option value="" disabled>
-                Select grade level
-              </option>
-              {getGradeLevels().map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
+        <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
+          <h2 className="text-3xl font-bold text-blue-950">Update Class</h2>
+        </div>
 
-          <div>
-            <label className="block text-gray-700">Section Name</label>
-            <input
-              type="text"
-              value={sectionName}
-              onChange={(e) => setSectionName(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            />
-          </div>
+        <div className="p-5">
+          <div className="bg-white p-5 rounded-xl overflow-auto">
+            <form onSubmit={handleSubmit} className="space-y-4">
 
-          {educationLevel === "college" && (
-            <div>
-              <label className="block text-gray-700">Department</label>
-              <input
-                type="text"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                required
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-              />
-            </div>
-          )}
+              <div className="sm:flex justify-around gap-4">
 
-          {educationLevel === "college" && (
-            <div>
-              <label className="block text-gray-700">Course</label>
-              <input
-                type="text"
-                value={course}
-                onChange={(e) => setCourse(e.target.value)}
-                required
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-              />
-            </div>
-          )}
-
-          {educationLevel !== "college" && (
-            <div>
-              <label className="block text-gray-700">Adviser</label>
-              <select
-                value={adviser}
-                onChange={(e) => setAdviser(e.target.value)}
-                required
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-              >
-                <option value="" disabled>
-                  Select an adviser
-                </option>
-                {teachers.map((teacher) => (
-                  <option key={teacher.uid} value={teacher.name}>
-                    {teacher.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {educationLevel !== "college" && (
-            <div>
-              <label className="block text-gray-700">Subjects</label>
-              {subjects.map((subject, index) => (
-                <div key={index} className="flex space-x-2 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Subject Name"
-                    value={subject.subject}
-                    onChange={(e) =>
-                      handleSubjectChange(index, "subject", e.target.value)
-                    }
-                    required
-                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-                  />
+                <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                  <label className="block text-gray-700">Education Level</label>
                   <select
-                    value={subject.teacherUid}
-                    onChange={(e) => handleTeacherChange(index, e.target.value)}
+                    value={educationLevel}
+                    onChange={(e) => {
+                      setEducationLevel(e.target.value);
+                      setGradeLevel("");
+                    }}
                     required
                     className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
                   >
                     <option value="" disabled>
-                      Select a teacher
+                      Select education level
                     </option>
-                    {teachers.map((teacher) => (
-                      <option key={teacher.uid} value={teacher.uid}>
-                        {teacher.name}
+                    <option value="elementary">Elementary</option>
+                    <option value="junior high school">Junior High School</option>
+                    <option value="senior high school">Senior High School</option>
+                    <option value="college">College</option>
+                  </select>
+                </div>
+
+                <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                  <label className="block text-gray-700">Grade Level</label>
+                  <select
+                    value={gradeLevel}
+                    onChange={(e) => setGradeLevel(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                    disabled={!educationLevel}
+                  >
+                    <option value="" disabled>
+                      Select grade level
+                    </option>
+                    {getGradeLevels().map((level) => (
+                      <option key={level} value={level}>
+                        {level}
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => removeSubject(index)}
-                    className="bg-red-500 text-white p-2 rounded hover:bg-red-700"
-                  >
-                    Remove
-                  </button>
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={addSubject}
-                className="bg-green-500 text-white p-2 rounded hover:bg-green-700"
-              >
-                Add Subject
-              </button>
-            </div>
-          )}
 
-          <div>
-            <label className="block text-gray-700 mb-2">Students</label>
-            <Select
-              isMulti
-              value={selectedStudentOptions}
-              onChange={setSelectedStudentOptions}
-              options={allStudentOptions}
-              className="basic-multi-select"
-              classNamePrefix="select"
-            />
-          </div>
+              </div>
 
-          <div className="flex space-x-4">
-            <button
-              type="submit"
-              className="bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
-            >
-              Update Class
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="bg-red-500 text-white p-2 rounded hover:bg-red-700"
-            >
-              Delete Class
-            </button>
+              <div className="sm:flex justify-around gap-4">
+                <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                  <label className="block text-gray-700">Section Name</label>
+                  <input
+                    type="text"
+                    value={sectionName}
+                    onChange={(e) => setSectionName(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                  />
+                </div>
+
+                {educationLevel === "college" && (
+                  <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                    <label className="block text-gray-700">Department</label>
+                    <input
+                      type="text"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                    />
+                  </div>
+                )}
+
+                {educationLevel === "college" && (
+                  <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                    <label className="block text-gray-700">Course</label>
+                    <input
+                      type="text"
+                      value={course}
+                      onChange={(e) => setCourse(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                    />
+                  </div>
+                )}
+
+                {educationLevel !== "college" && (
+                  <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                    <label className="block text-gray-700">Adviser</label>
+                    <select
+                      value={adviser}
+                      onChange={(e) => setAdviser(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                    >
+                      <option value="" disabled>
+                        Select an adviser
+                      </option>
+                      {teachers.map((teacher) => (
+                        <option key={teacher.uid} value={teacher.name}>
+                          {teacher.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+              </div>
+
+              <div className="sm:flex justify-around gap-4">
+
+              </div>
+
+
+
+              {educationLevel !== "college" && (
+                <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                  <label className="block text-gray-700">Subjects</label>
+                  {subjects.map((subject, index) => (
+                    <div key={index} className="flex space-x-2 mb-2">
+                      <input
+                        type="text"
+                        placeholder="Subject Name"
+                        value={subject.subject}
+                        onChange={(e) =>
+                          handleSubjectChange(index, "subject", e.target.value)
+                        }
+                        required
+                        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                      />
+                      <select
+                        value={subject.teacherUid}
+                        onChange={(e) => handleTeacherChange(index, e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                      >
+                        <option value="" disabled>
+                          Select a teacher
+                        </option>
+                        {teachers.map((teacher) => (
+                          <option key={teacher.uid} value={teacher.uid}>
+                            {teacher.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      <motion.button
+                        whileHover={{scale: 1.03}}
+                        whileTap={{scale: 0.95}}                        
+                        type="button"
+                        onClick={() => removeSubject(index)}
+                        className="bg-red-500 text-white p-2 sm:rounded rounded-full hover:bg-red-700 flex items-center justify-center sm:min-w-min min-w-[2.5rem] min-h-[2.5rem]"
+                      >
+                        <span className="hidden sm:inline">Remove</span>
+                        <FontAwesomeIcon icon={faXmark} className="sm:hidden"/>
+                      </motion.button>
+                    </div>
+
+                  ))}
+
+                  <div className="flex justify-center mt-5">
+                    <motion.button
+                      whileHover={{scale: 1.03}}
+                      whileTap={{scale: 0.95}}
+                      type="button"
+                      onClick={addSubject}
+                      className="bg-green-500 text-white p-2 sm:rounded rounded-full hover:bg-green-700 flex items-center justify-center sm:min-w-min min-w-[2.5rem] min-h-[2.5rem]"
+                    >
+                      <span className="hidden sm:inline">Add Subject</span>
+                      <FontAwesomeIcon icon={faPlus} className="sm:hidden"/>
+                    </motion.button>
+
+                  </div>
+                </div>
+              )}
+
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                <label className="block text-gray-700 mb-2">Students</label>
+                <Select
+                  isMulti
+                  value={selectedStudentOptions}
+                  onChange={setSelectedStudentOptions}
+                  options={allStudentOptions}
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                />
+              </div> 
+
+              <div className="sm:flex gap-4">
+                <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}                           
+                  type="submit"
+                  className="bg-blue-500 text-white p-2 rounded hover:bg-blue-700 w-full mb-2 sm:mb-0"
+                >
+                  Update Class
+                </motion.button>
+
+                <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}                            
+                  type="button"
+                  onClick={handleDelete}
+                  className="bg-red-500 text-white p-2 rounded hover:bg-red-700 w-full"
+                >
+                  Delete Class
+                </motion.button>
+              </div>
+
+            </form>
+
           </div>
-        </form>
+        </div>
+
+
       </div>
     </Sidebar>
   );

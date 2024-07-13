@@ -32,6 +32,7 @@ import OfficeClearanceManual from "./pages/OfficeClearanceManual";
 import ForgotPassword from "./pages/ForgotPassword";
 import SchoolEvents from "./pages/SchoolEvents";
 import SendPaymentConfirmationEmail from "./pages/SendPaymentConfirmationEmail";
+import Settings from "./pages/Settings";
 
 const router = createBrowserRouter([
   { path: "/", element: <SignIn /> },
@@ -64,7 +65,8 @@ const router = createBrowserRouter([
   { path: "/office-clearance-manual", element: <OfficeClearanceManual />},
   { path: "/forgot-password", element: <ForgotPassword />},
   { path: "/school-events", element: <SchoolEvents />},
-  { path: "/send-payment-confirmation", element: <SendPaymentConfirmationEmail />}
+  { path: "/send-payment-confirmation", element: <SendPaymentConfirmationEmail />},
+  { path: "/settings", element: <Settings /> },
 ]);
 
 function App() {

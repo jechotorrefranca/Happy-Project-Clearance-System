@@ -29,6 +29,12 @@ import {
   Clock,
   MapPin,
 } from "lucide-react";
+import { motion } from 'framer-motion';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {faCirclePlus } from "@fortawesome/free-solid-svg-icons";
+
 
 const educationLevels = [
   { value: "elementary", label: "Elementary" },
@@ -82,6 +88,43 @@ function SchoolEvents() {
 
   const { CSVReader } = useCSVReader();
 
+  const showSuccessToast = (msg) => toast.success(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
+    const showFailedToast = (msg) => toast.error(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });
+
+      const showWarnToast = (msg) => toast.warn(msg, {
+        position: "top-center",
+        autoClose: 2500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        transition: Bounce,
+        });
+
+
   useEffect(() => {
     fetchEvents();
   }, [sortBy, sortOrder]);
@@ -125,11 +168,11 @@ function SchoolEvents() {
         gradeLevels: [],
       });
 
-      alert("Event added successfully!");
+      showSuccessToast("Event added successfully!");
       fetchEvents();
     } catch (error) {
       console.error("Error adding event: ", error);
-      alert("Error adding event. Please try again later.");
+      showFailedToast("Error adding event. Please try again later");
     }
   };
 
@@ -143,11 +186,11 @@ function SchoolEvents() {
 
       setIsEditModalOpen(false);
       setEventToEdit(null);
-      alert("Event updated successfully!");
+      showSuccessToast("Event updated successfully!");
       fetchEvents();
     } catch (error) {
       console.error("Error updating event: ", error);
-      alert("Error updating event. Please try again later.");
+      showFailedToast("Error updating event. Please try again later");
     }
   };
 
@@ -155,11 +198,11 @@ function SchoolEvents() {
     if (window.confirm("Are you sure you want to delete this event?")) {
       try {
         await deleteDoc(doc(db, "events", eventId));
-        alert("Event deleted successfully!");
+        showSuccessToast("Event deleted successfully!");
         fetchEvents();
       } catch (error) {
         console.error("Error deleting event: ", error);
-        alert("Error deleting event. Please try again later.");
+        showFailedToast("Error deleting event. Please try again later");
       }
     }
   };
@@ -182,15 +225,15 @@ function SchoolEvents() {
 
         setEventToImport(null);
         setIsImportModalOpen(false);
-        alert("Attendees imported successfully!");
+        showSuccessToast("Attendees imported successfully!");
         fetchEvents();
       } else {
         console.error("Error: No event selected for import.");
-        alert("Error importing attendees: No event selected.");
+        showWarnToast("Error importing attendees: No event selected");
       }
     } catch (error) {
       console.error("Error importing attendees:", error);
-      alert("Error importing attendees. Please try again later.");
+      showFailedToast("Error importing attendees. Please try again later");
     }
   };
 
@@ -200,132 +243,177 @@ function SchoolEvents() {
 
   return (
     <Sidebar>
-      <div className="container mx-auto p-4">
-        <h2 className="text-3xl font-bold mb-6 text-gray-800">School Events</h2>
-
-        <div className="flex justify-between mb-6">
-          <button
-            onClick={() => setIsAddEventModalOpen(true)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out flex items-center"
-          >
-            <Plus className="mr-2" size={18} />
-            Add Event
-          </button>
-          <div className="flex items-center space-x-4">
-            <input
-              type="text"
-              placeholder="Filter events..."
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-            <select
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="date">Sort by Date</option>
-              <option value="title">Sort by Title</option>
-            </select>
-            <button
-              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-300 ease-in-out"
-            >
-              {sortOrder === "asc" ? "↑" : "↓"}
-            </button>
-          </div>
+      <ToastContainer/>
+      <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
+        <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
+          <h2 className="text-3xl font-bold text-blue-950">School Events</h2>
         </div>
 
-        <div className="bg-white overflow-hidden">
-          <table className="min-w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="py-3 px-4 text-left">Title</th>
-                <th className="py-3 px-4 text-left">Date</th>
-                <th className="py-3 px-4 text-left">Time</th>
-                <th className="py-3 px-4 text-left">Location</th>
-                <th className="py-3 px-4 text-left">Education Levels</th>
-                <th className="py-3 px-4 text-left">Grade Levels</th>
-                <th className="py-3 px-4 text-left">Attendees</th>
-                <th className="py-3 px-4 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEvents.map((event) => (
-                <tr key={event.id} className="border-b hover:bg-gray-50">
-                  <td className="py-4 px-4">{event.title}</td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center">
-                      <Calendar className="mr-2" size={16} />
-                      {moment(new Date(event.date)).format("LL")}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center">
-                      <Clock className="mr-2" size={16} />
-                      {event.startTime} - {event.endTime}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center">
-                      <MapPin className="mr-2" size={16} />
-                      {event.location}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    {event.educationLevels?.join(", ") || "N/A"}
-                  </td>
-                  <td className="py-4 px-4">
-                    {event.gradeLevels?.join(", ") || "N/A"}
-                  </td>
-                  <td className="py-4 px-4">
-                    {event.attendees ? event.attendees.length : 0}
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => {
-                          setEventToEdit({ ...event });
-                          setIsEditModalOpen(true);
-                        }}
-                        className="p-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition duration-300 ease-in-out"
-                        title="Edit"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(event.id)}
-                        className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 ease-in-out"
-                        title="Delete"
-                      >
-                        <Trash size={16} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEventToImport(event);
-                          setIsImportModalOpen(true);
-                        }}
-                        className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-300 ease-in-out"
-                        title="Import Attendees"
-                      >
-                        <Upload size={16} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEventToView(event);
-                          setIsAttendeesModalOpen(true);
-                        }}
-                        className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition duration-300 ease-in-out"
-                        title="View Attendees"
-                      >
-                        <Eye size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="p-5">
+          <div className="bg-white p-5 rounded-xl">
+            
+            <div className="sm:flex justify-around mb-6 gap-4">
+
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0 sm:flex justify-around gap-2">
+                
+                <input
+                  type="text"
+                  placeholder="Filter events..."
+                  className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full mb-2 sm:mb-0"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                />
+
+                <select
+                  className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full mb-2 sm:mb-0"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="date">Sort by Date</option>
+                  <option value="title">Sort by Title</option>
+                </select>
+
+                <div className="flex sm:block justify-center">
+                  <motion.button
+                    whileHover={{scale: 1.03}}
+                    whileTap={{scale: 0.95}}                  
+                    onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    className="bg-[#fff6d4] rounded-full text-2xl hover:bg-[#f8f1d4] min-w-[3rem] min-h-[3rem] p-2"
+                  >
+                    {sortOrder === "asc" ? "↑" : "↓"}
+                  </motion.button>
+                  
+                </div>
+                
+              </div>
+
+              <div className="flex items-center justify-center min-w-[30%] bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                <motion.button
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}                
+                  onClick={() => setIsAddEventModalOpen(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center w-full justify-center gap-1"
+                >
+                  <FontAwesomeIcon icon={faCirclePlus} className="text-xl"/>
+                  <p>
+                    Add Event
+
+                  </p>
+                </motion.button>
+
+              </div>
+
+            </div>
+
+              <div className="w-full overflow-auto">
+                <table className="min-w-full">
+                  <thead >
+                    <tr className="bg-blue-300">
+                      <th className="py-3 px-2 border border-gray-400">Title</th>
+                      <th className="py-3 px-2 border border-gray-400">Date</th>
+                      <th className="py-3 px-2 border border-gray-400">Time</th>
+                      <th className="py-3 px-2 border border-gray-400">Location</th>
+                      <th className="py-3 px-2 border border-gray-400">Education Levels</th>
+                      <th className="py-3 px-2 border border-gray-400">Grade Levels</th>
+                      <th className="py-3 px-2 border border-gray-400">Attendees</th>
+                      <th className="py-3 px-2 border border-gray-400">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEvents.map((event) => (
+                      <tr key={event.id} className="border-b hover:bg-blue-50">
+                        <td className="py-4 px-4">{event.title}</td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center">
+                            <Calendar className="mr-2" size={16} />
+                            {moment(new Date(event.date)).format("LL")}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center">
+                            <Clock className="mr-2" size={16} />
+                            {event.startTime} - {event.endTime}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center">
+                            <MapPin className="mr-2" size={16} />
+                            {event.location}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {event.educationLevels?.join(", ") || "N/A"}
+                        </td>
+                        <td className="py-4 px-4">
+                          {event.gradeLevels?.join(", ") || "N/A"}
+                        </td>
+                        <td className="py-4 px-4">
+                          {event.attendees ? event.attendees.length : 0}
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex space-x-2">
+                            <motion.button
+                            whileHover={{scale: 1.03}}
+                            whileTap={{scale: 0.95}}                          
+                              onClick={() => {
+                                setEventToEdit({ ...event });
+                                setIsEditModalOpen(true);
+                              }}
+                              className="p-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 flex justify-center items-center" 
+                              title="Edit"
+                            >
+                              <Edit size={16} />
+                            </motion.button>
+
+                            <motion.button
+                            whileHover={{scale: 1.03}}
+                            whileTap={{scale: 0.95}}                          
+                              onClick={() => handleDeleteEvent(event.id)}
+                              className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 flex justify-center items-center"
+                              title="Delete"
+                            >
+                              <Trash size={16} />
+                            </motion.button>
+
+                            <motion.button
+                            whileHover={{scale: 1.03}}
+                            whileTap={{scale: 0.95}}                          
+                              onClick={() => {
+                                setEventToImport(event);
+                                setIsImportModalOpen(true);
+                              }}
+                              className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex justify-center items-center"
+                              title="Import Attendees"
+                            >
+                              <Upload size={16} />
+                            </motion.button>
+
+                            <motion.button
+                            whileHover={{scale: 1.03}}
+                            whileTap={{scale: 0.95}}                          
+                              onClick={() => {
+                                setEventToView(event);
+                                setIsAttendeesModalOpen(true);
+                              }}
+                              className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600 flex justify-center items-center"
+                              title="View Attendees"
+                            >
+                              <Eye size={16} />
+                            </motion.button>
+
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+              </div>
+
+
+        </div>
+
+
         </div>
 
         <Modal
@@ -503,22 +591,28 @@ function SchoolEvents() {
                 />
               </div>
 
-              <div className="flex justify-end">
-                <button
+              <div className="flex justify-around">
+                <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}                
                   type="button"
                   onClick={() => setIsAddEventModalOpen(false)}
-                  className="mr-2 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300 ease-in-out"
+                  className="mr-2 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 w-full"
                 >
                   Cancel
-                </button>
-                <button
+                </motion.button>
+
+                <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}                
                   type="button"
                   onClick={handleAddEvent}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full"
                 >
                   Add Event
-                </button>
+                </motion.button>
               </div>
+              
             </form>
           </div>
         </Modal>
@@ -711,21 +805,25 @@ function SchoolEvents() {
                   />
                 </div>
 
-                <div className="flex justify-end">
-                  <button
+                <div className="flex justify-around">
+                  <motion.button
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}
                     type="button"
                     onClick={() => setIsEditModalOpen(false)}
-                    className="mr-2 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300 ease-in-out"
+                    className="mr-2 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 w-full"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}                  
                     type="button"
                     onClick={handleEditEvent}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full"
                   >
                     Save Changes
-                  </button>
+                  </motion.button>
                 </div>
               </form>
             )}
@@ -799,7 +897,7 @@ function SchoolEvents() {
           isOpen={isAttendeesModalOpen}
           onClose={() => setIsAttendeesModalOpen(false)}
         >
-          <div className="p-6 max-h-[80vh] overflow-y-auto">
+          <div className="p-6 max-h-[80vh]">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-2xl font-semibold">Attendees</h3>
               <button
@@ -810,10 +908,8 @@ function SchoolEvents() {
               </button>
             </div>
 
-            {eventToView ? (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">
-                  {eventToView.title}
+            <h4 className="text-lg font-semibold mb-2">
+                  {eventToView?.title}
                 </h4>
 
                 <div className="mb-4"> 
@@ -826,6 +922,9 @@ function SchoolEvents() {
                   />
                 </div>
 
+            {eventToView ? (
+              <div className="overflow-y-auto max-h-[60vh]">
+
                 {eventToView.attendees && eventToView.attendees.length > 0 ? (
                   <ul className="space-y-2">
                     {eventToView.attendees
@@ -833,7 +932,7 @@ function SchoolEvents() {
                         attendee.studentName.toLowerCase().includes(attendeeFilter.toLowerCase())
                       ) 
                       .map((attendee, index) => (
-                        <li key={index} className="bg-gray-100 p-3 rounded-lg">
+                        <li key={index} className="bg-[#fff9e5] p-3 rounded-lg">
                         <p className="font-semibold">{attendee.studentName}</p>
                         <p className="text-sm text-gray-600">
                           ID: {attendee.studentId} | UID: {attendee.studentUid}

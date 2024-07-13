@@ -6,7 +6,6 @@ import {
   getDocs,
   doc,
   updateDoc,
-  orderBy,
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
@@ -17,8 +16,6 @@ import Modal from "../components/Modal";
 import moment from "moment";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faCheckCircle,
-  faTimesCircle,
   faAngleDown,
   faAngleUp,
 } from "@fortawesome/free-solid-svg-icons";
@@ -352,17 +349,17 @@ function ApproveClearanceTeachers() {
                 <table className="min-w-full bg-white border border-gray-200">
                   <thead>
                     <tr className="bg-blue-300">
-                      <th className="py-5 border border-gray-400">Student ID</th>
-                      <th className="py-5 border border-gray-400">Student Name</th>
-                      <th className="py-5 border border-gray-400">Subject</th>
-                      <th className="py-5 border border-gray-400">Section</th>
-                      <th className="py-5 border border-gray-400">Status</th>
-                      <th className="py-5 border border-gray-400">
+                      <th className="py-3 px-2 border border-gray-400">Student ID</th>
+                      <th className="py-3 px-2 border border-gray-400">Student Name</th>
+                      <th className="py-3 px-2 border border-gray-400">Subject</th>
+                      <th className="py-3 px-2 border border-gray-400">Section</th>
+                      <th className="py-3 px-2 border border-gray-400">Status</th>
+                      <th className="py-3 px-2 border border-gray-400">
                         Disciplinary Records
                       </th>
-                      <th className="py-5 border border-gray-400">Files</th>
-                      <th className="py-5 border border-gray-400 text-center bg-[#fff2c1]">Actions</th>
-                      <th className="py-5 border border-gray-400 text-center bg-[#fff2c1]"></th>
+                      <th className="py-3 px-2 border border-gray-400">Files</th>
+                      <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]">Actions</th>
+                      <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -402,7 +399,7 @@ function ApproveClearanceTeachers() {
                           <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
                             {request.status === "pending" && (
                               <>
-                              <div className="gap-2 flex justify-center">
+                              <div className="gap-2 flex flex-wrap justify-center">
                                 <motion.button
                                   whileHover={{ scale: 1.03 }}
                                   whileTap={{ scale: 0.95 }}
