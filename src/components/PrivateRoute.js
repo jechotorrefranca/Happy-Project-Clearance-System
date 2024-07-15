@@ -1,32 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
-import { app } from '../firebaseConfig';
 
 const PrivateRoute = ({ children }) => {
-  const { currentUser } = useAuth();
-  const [userRole, setUserRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { currentUser, loading } = useAuth();
 
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (currentUser) {
-        const db = getFirestore(app);
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('uid', '==', currentUser.uid));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const userDoc = querySnapshot.docs[0];
-          setUserRole(userDoc.data().role);
-        }
-      }
-      setLoading(false);
-    };
+  console.log("PR: ", currentUser);
 
-    fetchUserRole();
-  }, [currentUser]);
 
   if (loading) {
     return <div>Loading...</div>;
