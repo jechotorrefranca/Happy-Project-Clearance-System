@@ -229,7 +229,7 @@ function ManageOfficeRequirements() {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Education Levels
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -244,7 +244,7 @@ function ManageOfficeRequirements() {
                           <div className="text-sm text-gray-500">{requirement.educationLevels.join(", ")}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
+                          <div className="flex space-x-2 justify-center">
                             <motion.button
                             whileHover={{scale: 1.03}}
                             whileTap={{scale: 0.95}}                          
