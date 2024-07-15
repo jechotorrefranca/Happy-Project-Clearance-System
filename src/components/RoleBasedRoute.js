@@ -34,8 +34,6 @@ const RoleBasedRoute = ({ children, allowedRoles }) => {
   }
 
   if (!currentUser) {
-    
-    console.log("dsdsdsdsdsd")
     return <Navigate to="/" replace />;
   }
 
