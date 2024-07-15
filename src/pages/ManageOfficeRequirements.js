@@ -7,6 +7,9 @@ import Modal from "../components/Modal";
 import Select from "react-select";
 import { useNavigate } from "react-router-dom";
 import { PlusCircleIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { motion } from 'framer-motion';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function ManageOfficeRequirements() {
   const { currentUser } = useAuth();
@@ -20,6 +23,30 @@ function ManageOfficeRequirements() {
   const [requirementToEdit, setRequirementToEdit] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [requirementToDelete, setRequirementToDelete] = useState(null);
+
+  const showSuccessToast = (msg) => toast.success(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
+    const showFailedToast = (msg) => toast.error(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });
 
   useEffect(() => {
     const fetchOfficeRequirements = async () => {
@@ -73,8 +100,8 @@ function ManageOfficeRequirements() {
 
   const getOfficeNameByRole = (role) => {
     const officeNames = {
-      librarian: "Librarian",
-      finance: "Finance",
+      Librarian: "Librarian",
+      Finance: "Finance",
       registrarBasicEd: "Basic Education Registrar",
       characterRenewalOfficer: "Character Renewal Office",
       "College Library": "College Library",
@@ -131,8 +158,10 @@ function ManageOfficeRequirements() {
         )
       );
       handleCloseEditModal();
+      showSuccessToast("Requirement saved successfully!")
     } catch (error) {
       console.error("Error updating office requirement:", error);
+      showFailedToast("Error updating requirement");
     }
   };
 
@@ -153,74 +182,101 @@ function ManageOfficeRequirements() {
       setOfficeRequirements((prevRequirements) =>
         prevRequirements.filter((req) => req.id !== requirementToDelete.id)
       );
+      showSuccessToast("Requirement deleted successfully!");
       closeDeleteModal();
     } catch (error) {
       console.error("Error deleting office requirement:", error);
+      showFailedToast("Error deleting requirement");
     }
   };
 
   return (
     <Sidebar>
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-800">Manage Office Requirements</h2>
-          <button
-            onClick={() => navigate("/add-office-requirement")}
-            className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300"
-          >
-            <PlusCircleIcon className="w-5 h-5 mr-2" />
-            Add Requirement
-          </button>
+      <ToastContainer/>
+      <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
+        <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
+          <h2 className="text-3xl font-bold text-blue-950 text-center">Manage Office Requirements</h2>
         </div>
 
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-800">{officeName} Requirements</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Requirement Name
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Education Levels
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {officeRequirements.map((requirement) => (
-                  <tr key={requirement.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{requirement.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{requirement.educationLevels.join(", ")}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleOpenEditModal(requirement)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        <PencilIcon className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(requirement)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="p-5">
+          <div className="bg-white p-5 rounded-xl overflow-auto">
+
+            <div className="flex justify-center">
+              <div className="w-full sm:w-[50%] bg-blue-100 p-5 rounded mb-2 flex justify-center items-center">
+                <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}                
+                  onClick={() => navigate("/add-office-requirement")}
+                  className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full justify-center"
+                >
+                  <PlusCircleIcon className="w-5 h-5 mr-2" />
+                  Add Requirement
+                </motion.button>
+              </div>
+            </div>
+
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+              <div className="px-6 py-4 bg-blue-300 border-b border-gray-200">
+                <h3 className="text-xl font-semibold text-gray-800">{officeName} Requirements</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr className="bg-blue-100">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Requirement Name
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Education Levels
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {officeRequirements.map((requirement) => (
+                      <tr key={requirement.id} className="bg-blue-50 hover:bg-blue-100">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{requirement.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">{requirement.educationLevels.join(", ")}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <motion.button
+                            whileHover={{scale: 1.03}}
+                            whileTap={{scale: 0.95}}                          
+                              onClick={() => handleOpenEditModal(requirement)}
+                              className="p-2 text-green-600 hover:text-green-800 bg-green-200 hover:bg-green-300 rounded-full"
+                            >
+                              <PencilIcon className="w-5 h-5" />
+                            </motion.button>
+
+                            <motion.button
+                            whileHover={{scale: 1.03}}
+                            whileTap={{scale: 0.95}}                          
+                              onClick={() => openDeleteModal(requirement)}
+                              className="p-2 text-red-600 hover:text-red-800 bg-red-200 hover:bg-red-300 rounded-full"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </motion.button>
+
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
         </div>
+
+
+
 
         <Modal isOpen={isEditing} onClose={handleCloseEditModal}>
           <div className="p-6">
@@ -262,20 +318,25 @@ function ManageOfficeRequirements() {
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
-                <div className="flex justify-end space-x-3">
-                  <button
+                <div className="flex justify-around gap-2">
+                  <motion.button
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}                  
                     type="button"
                     onClick={handleCloseEditModal}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded text-sm text-white bg-gray-400 hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </motion.button>
+
+                  <motion.button
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}                  
                     type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-transparent rounded shadow-sm text-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     Save Changes
-                  </button>
+                  </motion.button>
                 </div>
               </form>
             )}
@@ -288,19 +349,23 @@ function ManageOfficeRequirements() {
             <p className="text-sm text-gray-500 mb-4">
               Are you sure you want to delete this requirement? This action cannot be undone.
             </p>
-            <div className="flex justify-end space-x-3">
-              <button
+            <div className="flex justify-around gap-2">
+              <motion.button
+              whileHover={{scale: 1.03}}
+              whileTap={{scale: 0.95}}              
                 onClick={closeDeleteModal}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 border rounded text-sm text-white bg-gray-400 hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Cancel
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+              whileHover={{scale: 1.03}}
+              whileTap={{scale: 0.95}}              
                 onClick={handleDeleteRequirement}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="w-full px-4 py-2 border border-transparent rounded shadow-sm text-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 Delete
-              </button>
+              </motion.button>
             </div>
           </div>
         </Modal>

@@ -405,6 +405,11 @@ export default function Sidebar({ children }) {
       ...item,
       current: location.pathname === item.href,
     }));
+  } else {
+    navigation = navigation.map((item) => ({
+      ...item,
+      current: location.pathname === item.href,
+    }));
   }
 
   const getInitials = (email) => {

@@ -20,6 +20,10 @@ import {
   faAngleDown,
   faAngleUp,
 } from "@fortawesome/free-solid-svg-icons";
+import { motion } from 'framer-motion';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function OfficeClearanceManagement() {
   const { currentUser } = useAuth();
@@ -34,6 +38,43 @@ function OfficeClearanceManagement() {
   const [officeName, setOfficeName] = useState("");
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [userDepartment, setUserDepartment] = useState(null);
+
+  const showSuccessToast = (msg) => toast.success(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
+    const showFailedToast = (msg) => toast.error(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });
+
+  const showWarnToast = (msg) => toast.warn(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -100,10 +141,10 @@ function OfficeClearanceManagement() {
         setUserDepartment(userData.department || null);
 
         switch (userRole) {
-          case "librarian":
+          case "Librarian":
             setOfficeName("Librarian");
             break;
-          case "finance":
+          case "Finance":
             setOfficeName("Finance");
             break;
           case "registrarBasicEd":
@@ -180,7 +221,7 @@ function OfficeClearanceManagement() {
   
       if (querySnapshot.empty) {
         console.error("No student found with uid:", studentId);
-        alert("Error: Student not found.");
+        showFailedToast("Error: Student not found");
         return;
       }
   
@@ -202,10 +243,10 @@ function OfficeClearanceManagement() {
         )
       );
   
-      alert(`${officeName} clearance marked for the student.`);
+      showSuccessToast(`${officeName} clearance marked for the student`)
     } catch (error) {
       console.error("Error updating student clearance: ", error);
-      alert("Error updating clearance. Please try again later.");
+      showFailedToast("Error updating clearance. Please try again later")
     }
   };
 
@@ -234,7 +275,7 @@ function OfficeClearanceManagement() {
 
   const handleClearSelectedStudents = async () => {
     if (selectedStudentIds.length === 0) {
-      alert("Please select students to clear.");
+      showWarnToast("Please select students to clear")
       return;
     }
 
@@ -244,11 +285,11 @@ function OfficeClearanceManagement() {
       });
       await Promise.all(updatePromises);
 
-      alert(`Selected students cleared for ${officeName} clearance.`);
+      showSuccessToast(`Selected students cleared for ${officeName} clearance`);
       setSelectedStudentIds([]);
     } catch (error) {
       console.error("Error clearing selected students: ", error);
-      alert("Error clearing students. Please try again later.");
+      showFailedToast("Error clearing students. Please try again later");
     }
   };
 
@@ -262,197 +303,202 @@ function OfficeClearanceManagement() {
 
   return (
     <Sidebar>
-      <div className="container mx-auto p-4">
-        <h2 className="text-2xl font-semibold mb-4">
-          Office Clearance Management ({officeName})
-        </h2>
-
-        <div className="mb-4 flex space-x-4">
-          <div>
-            <label
-              htmlFor="educationLevelFilter"
-              className="block text-gray-700 mb-1"
-            >
-              Filter by Education Level:
-            </label>
-            <select
-              id="educationLevelFilter"
-              value={educationLevelFilter}
-              onChange={(e) => setEducationLevelFilter(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="all">All Education Levels</option>
-              {availableEducationLevels.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="sectionFilter" className="block text-gray-700 mb-1">
-              Filter by Section:
-            </label>
-            <select
-              id="sectionFilter"
-              value={sectionFilter}
-              onChange={(e) => setSectionFilter(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="all">All Sections</option>
-              {availableSections.map((section) => (
-                <option key={section} value={section}>
-                  {section}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="searchQuery" className="block text-gray-700 mb-1">
-              Search by Name:
-            </label>
-            <input
-              type="text"
-              id="searchQuery"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            />
-          </div>
+      <ToastContainer/>
+      <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
+        <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
+          <h2 className="text-3xl font-bold text-blue-950 text-center">Office Clearance Management ({officeName})</h2>
         </div>
 
-        <div className="mb-4">
-          <button
-            onClick={handleClearSelectedStudents}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
-            disabled={selectedStudentIds.length === 0}
-          >
-            Clear Selected Students
-          </button>
-        </div>
+        <div className="p-5">
+          <div className="bg-white p-5 rounded-xl overflow-auto">
 
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              <th className="py-2 border-b border-gray-200 w-8">
-                <input type="checkbox" onChange={handleSelectAllStudents} />
-              </th>
-              <th className="py-2 border-b border-gray-200">Student ID</th>
-              <th className="py-2 border-b border-gray-200">Name</th>
-              <th className="py-2 border-b border-gray-200">Email</th>
-              <th className="py-2 border-b border-gray-200">Section</th>
-              <th className="py-2 border-b border-gray-200">Grade Level</th>
-              <th className="py-2 border-b border-gray-200">Education Level</th>
-              <th className="py-2 border-b border-gray-200 text-center">
-                Completion (%)
-              </th>
-              <th className="py-2 border-b border-gray-200">Actions</th>
-              <th className="py-2 border-b border-gray-200"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.map((student) => (
-              <React.Fragment key={student.uid}>
-                <tr
-                  key={student.uid}
-                  onClick={() => handleStudentClick(student.uid)}
-                  className="cursor-pointer hover:bg-gray-100"
+            <div className="mb-4 sm:flex gap-4">
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                <label
+                  htmlFor="educationLevelFilter"
+                  className="block text-gray-700 mb-1"
                 >
-                  <td className="border px-4 py-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStudentIds.includes(student.uid)}
-                      onChange={() => handleSelectStudent(student.uid)}
-                      disabled={student.clearance[officeName]}
-                    />
-                  </td>
-                  <td className="border px-4 py-2">{student.studentId}</td>
-                  <td className="border px-4 py-2">{student.fullName}</td>
-                  <td className="border px-4 py-2">{student.email}</td>
-                  <td className="border px-4 py-2">{student.section}</td>
-                  <td className="border px-4 py-2">{student.gradeLevel}</td>
-                  <td className="border px-4 py-2">{student.educationLevel}</td>
-                  <td className="border px-4 py-2 text-center">
-                    {student.completionPercentage}%
-                  </td>
-                  <td className="border px-4 py-2">
-                    {!student.clearance[officeName] && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleClearStudent(student.uid);
-                        }}
-                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </td>
-                  <td className="border px-4 py-2 text-center">
-                    <FontAwesomeIcon
-                      icon={
-                        expandedStudent === student.uid
-                          ? faAngleUp
-                          : faAngleDown
-                      }
-                    />
-                  </td>
-                </tr>
+                  Filter by Education Level:
+                </label>
+                <select
+                  id="educationLevelFilter"
+                  value={educationLevelFilter}
+                  onChange={(e) => setEducationLevelFilter(e.target.value)}
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                >
+                  <option value="all">All Education Levels</option>
+                  {availableEducationLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                {expandedStudent === student.uid && (
-                  <tr className="bg-gray-100">
-                    <td colSpan={9} className="border px-4 py-2">
-                      {student.disciplinaryRecords &&
-                      student.disciplinaryRecords.length > 0 ? (
-                        <div>
-                          <h4 className="font-medium mb-2">
-                            Disciplinary Records:
-                          </h4>
-                          <table className="min-w-full">
-                            <thead>
-                              <tr>
-                                <th className="py-2 border-b border-gray-200">
-                                  Date
-                                </th>
-                                <th className="py-2 border-b border-gray-200">
-                                  Violations
-                                </th>
-                                <th className="py-2 border-b border-gray-200">
-                                  Sanctions
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {student.disciplinaryRecords.map((record) => (
-                                <tr key={record.timestamp}>
-                                  <td className="border px-4 py-2">
-                                    {moment(record.timestamp.toDate()).format(
-                                      "YYYY-MM-DD"
-                                    )}
-                                  </td>
-                                  <td className="border px-4 py-2">
-                                    {record.violations.join(", ")}
-                                  </td>
-                                  <td className="border px-4 py-2">
-                                    {record.sanctions.join(", ")}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <p>No disciplinary records found.</p>
-                      )}
-                    </td>
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                <label htmlFor="sectionFilter" className="block text-gray-700 mb-1">
+                  Filter by Section:
+                </label>
+                <select
+                  id="sectionFilter"
+                  value={sectionFilter}
+                  onChange={(e) => setSectionFilter(e.target.value)}
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                >
+                  <option value="all">All Sections</option>
+                  {availableSections.map((section) => (
+                    <option key={section} value={section}>
+                      {section}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                <label htmlFor="searchQuery" className="block text-gray-700 mb-1">
+                  Search by Name:
+                </label>
+                <input
+                  type="text"
+                  id="searchQuery"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                />
+              </div>
+            </div>
+
+            <div className="w-full flex justify-center items-center bg-blue-100 p-5 rounded mb-4">
+              <motion.button
+              whileHover={{scale: 1.03}}
+              whileTap={{scale: 0.95}}              
+                onClick={handleClearSelectedStudents}
+                className="w-full sm:w-[50%] px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                disabled={selectedStudentIds.length === 0}
+              >
+                Clear Selected Students
+              </motion.button>
+            </div>
+
+            <div className="w-full overflow-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
+                  <tr className="bg-blue-300">
+                    <th className="py-3 px-2 border border-gray-400 w-8">
+                      <input type="checkbox" onChange={handleSelectAllStudents} />
+                    </th>
+                    <th className="py-3 px-2 border border-gray-400">Student ID</th>
+                    <th className="py-3 px-2 border border-gray-400">Name</th>
+                    <th className="py-3 px-2 border border-gray-400">Email</th>
+                    <th className="py-3 px-2 border border-gray-400">Section</th>
+                    <th className="py-3 px-2 border border-gray-400">Grade Level</th>
+                    <th className="py-3 px-2 border border-gray-400">Education Level</th>
+                    <th className="py-3 px-2 border border-gray-400 text-center">
+                      Completion (%)
+                    </th>
+                    <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]">Actions</th>
                   </tr>
-                )}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <React.Fragment key={student.uid}>
+                      <tr
+                        key={student.uid}
+                        onClick={() => handleStudentClick(student.uid)}
+                        className="custom-row bg-blue-100 hover:bg-blue-200"
+                      >
+                        <td className="border border-gray-400 px-4 py-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedStudentIds.includes(student.uid)}
+                            onChange={() => handleSelectStudent(student.uid)}
+                            disabled={student.clearance[officeName]}
+                          />
+                        </td>
+                        <td className="border border-gray-400 px-4 py-2">{student.studentId}</td>
+                        <td className="border border-gray-400 px-4 py-2">{student.fullName}</td>
+                        <td className="border border-gray-400 px-4 py-2">{student.email}</td>
+                        <td className="border border-gray-400 px-4 py-2">{student.section}</td>
+                        <td className="border border-gray-400 px-4 py-2">{student.gradeLevel}</td>
+                        <td className="border border-gray-400 px-4 py-2">{student.educationLevel}</td>
+                        <td className="border border-gray-400 px-4 py-2 text-center">
+                          {student.completionPercentage}%
+                        </td>
+                        <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
+                          {!student.clearance[officeName] && (
+                            <motion.button
+                              whileHover={{scale: 1.03}}
+                              whileTap={{scale: 0.95}}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleClearStudent(student.uid);
+                              }}
+                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                            >
+                              Clear
+                            </motion.button>
+                          )}
+                        </td>
+                      </tr>
+
+                      {/* {expandedStudent === student.uid && (
+                        <tr className="bg-gray-100">
+                          <td colSpan={9} className="border px-4 py-2">
+                            {student.disciplinaryRecords &&
+                            student.disciplinaryRecords.length > 0 ? (
+                              <div>
+                                <h4 className="font-medium mb-2">
+                                  Disciplinary Records:
+                                </h4>
+                                <table className="min-w-full">
+                                  <thead>
+                                    <tr>
+                                      <th className="py-2 border-b border-gray-200">
+                                        Date
+                                      </th>
+                                      <th className="py-2 border-b border-gray-200">
+                                        Violations
+                                      </th>
+                                      <th className="py-2 border-b border-gray-200">
+                                        Sanctions
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {student.disciplinaryRecords.map((record) => (
+                                      <tr key={record.timestamp}>
+                                        <td className="border px-4 py-2">
+                                          {moment(record.timestamp.toDate()).format(
+                                            "YYYY-MM-DD"
+                                          )}
+                                        </td>
+                                        <td className="border px-4 py-2">
+                                          {record.violations.join(", ")}
+                                        </td>
+                                        <td className="border px-4 py-2">
+                                          {record.sanctions.join(", ")}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <p>No disciplinary records found.</p>
+                            )}
+                          </td>
+                        </tr>
+                      )} */}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </Sidebar>
   );

@@ -19,6 +19,10 @@ import ReactToPrint from "react-to-print";
 import * as XLSX from "xlsx";
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { motion } from 'framer-motion';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function ClassDetails() {
   const { currentUser } = useAuth();
@@ -30,6 +34,43 @@ function ClassDetails() {
   const [clearanceFilter, setClearanceFilter] = useState("all");
   const componentRef = useRef(null);
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
+
+  const showSuccessToast = (msg) => toast.success(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
+    const showFailedToast = (msg) => toast.error(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });
+
+  const showWarnToast = (msg) => toast.warn(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
 
   useEffect(() => {
     const fetchClassData = async () => {
@@ -238,14 +279,14 @@ function ClassDetails() {
           )
         );
 
-        alert("Student clearance updated successfully!");
+        showSuccessToast("Student clearance updated successfully!");
       } else {
         console.error("No student found with the given ID");
-        alert("No student found with the given ID");
+        showWarnToast("No student found with the given ID");
       }
     } catch (error) {
       console.error("Error updating student clearance: ", error);
-      alert("Error updating clearance. Please try again later.");
+      showFailedToast("Error updating clearance. Please try again later");
     }
   };
 
@@ -271,12 +312,12 @@ function ClassDetails() {
 
   const handleClearSelectedStudents = async () => {
     if (selectedStudentIds.length === 0) {
-      alert("Please select students to clear.");
+      showWarnToast("Please select students to clear");
       return;
     }
 
     if (!selectedSubject) {
-      alert("Please select a subject.");
+      showWarnToast("Please select a subject")
       return;
     }
 
@@ -286,11 +327,11 @@ function ClassDetails() {
       });
       await Promise.all(updatePromises);
 
-      alert("Selected students cleared successfully!");
+      showSuccessToast("Selected students cleared successfully!");
       setSelectedStudentIds([]);
     } catch (error) {
       console.error("Error clearing selected students: ", error);
-      alert("Error clearing students. Please try again later.");
+      showFailedToast("Error clearing students. Please try again later");
     }
   };
 
@@ -300,6 +341,7 @@ function ClassDetails() {
 
   return (
     <Sidebar>
+      <ToastContainer/>
       <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
         <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
           <h2 className="text-3xl font-bold text-blue-950">Class Details: {classData.sectionName}</h2>
@@ -370,9 +412,12 @@ function ClassDetails() {
                   <ReactToPrint
                     trigger={() => (
                       <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
-                        <button className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                        <motion.button
+                          whileHover={{scale: 1.03}}
+                          whileTap={{scale: 0.95}}
+                         className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                           Print Table
-                        </button>
+                        </motion.button>
                         
                       </div>
                     )}
@@ -380,108 +425,124 @@ function ClassDetails() {
                   />
 
                   <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
-                    <button
+                    <motion.button
+                      whileHover={{scale: 1.03}}
+                      whileTap={{scale: 0.95}}                    
                       onClick={handleExportExcel}
                       className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                     >
                       Export to Excel
-                    </button>
+                    </motion.button>
 
                   </div>
                 </div>
 
             {selectedSubject && (
-              <div ref={componentRef}>
-                <div className="flex justify-center items-center text-center bg-blue-300 p-3 rounded mb-4">
-                  <h2 className="text-2xl text-blue-950 font-bold">Students - {selectedSubject}</h2>
+              <>
+                <div ref={componentRef}>
+                  <div className="flex justify-center items-center text-center bg-blue-300 p-3 rounded mb-4">
+                    <h2 className="text-2xl text-blue-950 font-bold">Students - {selectedSubject}</h2>
+                  </div>
+
+                  <div className="w-full overflow-auto">
+                    {getFilteredStudents().length === 0 ? (
+                      <p>No students found.</p>
+                    ) : (
+                      <table className="min-w-full bg-white border border-gray-200">
+                        <thead>
+                          <tr className="bg-blue-300">
+                            <th className="py-3 px-2 border border-gray-400">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  selectedStudentIds.length ===
+                                  getFilteredStudents().length
+                                }
+                                onChange={handleSelectAllStudents}
+                              />
+                            </th>
+                            <th className="py-3 px-2 border border-gray-400">Student ID</th>
+                            <th className="py-3 px-2 border border-gray-400">Name</th>
+                            <th className="py-3 px-2 border border-gray-400 text-center">
+                              Cleared
+                            </th>
+                            <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {getFilteredStudents().map((student) => (
+                            <tr key={student.uid} className="custom-row bg-blue-100 hover:bg-blue-200">
+                              <td className="border border-gray-400 px-4 py-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedStudentIds.includes(student.uid)}
+                                  onChange={() => handleSelectStudent(student.uid)}
+                                />
+                              </td>
+                              <td className="border border-gray-400 px-4 py-2">
+                                {student.studentId}
+                              </td>
+                              <td className="border border-gray-400 px-4 py-2">
+                                {student.fullName}
+                              </td>
+                              <td className="border border-gray-400 px-4 py-2 text-center">
+                                {student.clearance[selectedSubject] ? (
+                                  <FontAwesomeIcon
+                                    icon={faCheckCircle}
+                                    className="text-green-500"
+                                  />
+                                ) : (
+                                  <FontAwesomeIcon
+                                    icon={faTimesCircle}
+                                    className="text-red-500"
+                                  />
+                                )}
+                              </td>
+                              <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
+                                {!student.clearance[selectedSubject] && (
+                                  <button
+                                    onClick={() => handleClearStudent(student.uid)}
+                                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                                  >
+                                    Mark Cleared
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+
+                  </div>
+
                 </div>
 
-                {getFilteredStudents().length === 0 ? (
-                  <p>No students found.</p>
-                ) : (
-                  <table className="min-w-full bg-white border border-gray-200">
-                    <thead>
-                      <tr className="bg-blue-300">
-                        <th className="py-3 px-2 border border-gray-400">
-                          <input
-                            type="checkbox"
-                            checked={
-                              selectedStudentIds.length ===
-                              getFilteredStudents().length
-                            }
-                            onChange={handleSelectAllStudents}
-                          />
-                        </th>
-                        <th className="py-3 px-2 border border-gray-400">Student ID</th>
-                        <th className="py-3 px-2 border border-gray-400">Name</th>
-                        <th className="py-3 px-2 border border-gray-400 text-center">
-                          Cleared
-                        </th>
-                        <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {getFilteredStudents().map((student) => (
-                        <tr key={student.uid} className="custom-row bg-blue-100 hover:bg-blue-200">
-                          <td className="border border-gray-400 px-4 py-2 text-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedStudentIds.includes(student.uid)}
-                              onChange={() => handleSelectStudent(student.uid)}
-                            />
-                          </td>
-                          <td className="border border-gray-400 px-4 py-2">
-                            {student.studentId}
-                          </td>
-                          <td className="border border-gray-400 px-4 py-2">
-                            {student.fullName}
-                          </td>
-                          <td className="border border-gray-400 px-4 py-2 text-center">
-                            {student.clearance[selectedSubject] ? (
-                              <FontAwesomeIcon
-                                icon={faCheckCircle}
-                                className="text-green-500"
-                              />
-                            ) : (
-                              <FontAwesomeIcon
-                                icon={faTimesCircle}
-                                className="text-red-500"
-                              />
-                            )}
-                          </td>
-                          <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
-                            {!student.clearance[selectedSubject] && (
-                              <button
-                                onClick={() => handleClearStudent(student.uid)}
-                                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                              >
-                                Mark Cleared
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                <div className="w-full flex justify-center">
+                  <div className="w-full sm:w-[50%] bg-blue-100 p-5 rounded mb-2 sm:mb-0 mt-4 ">
+                    <motion.button
+                      whileHover={{scale: 1.03}}
+                      whileTap={{scale: 0.95}}                    
+                      onClick={handleClearSelectedStudents}
+                      className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 "
+                      disabled={selectedStudentIds.length === 0}
+                    >
+                      Clear Selected Students
+                    </motion.button>
+                  </div>
 
-                <div className="mt-4">
-                  <button
-                    onClick={handleClearSelectedStudents}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                    disabled={selectedStudentIds.length === 0}
-                  >
-                    Clear Selected Students
-                  </button>
                 </div>
-              </div>
+
+
+              </>
+              
             )}
 
 
             {selectedSubject && students.length > 0 && (
-              <div className="mt-8">
+              <div className="mt-8 bg-blue-50 p-3">
                 <div className="flex justify-center items-center text-center bg-blue-300 p-3 rounded mb-4">
                   <h2 className="text-2xl text-blue-950 font-bold">Clearance Progress - {selectedSubject}</h2>
                 </div>
@@ -493,7 +554,7 @@ function ClassDetails() {
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
-                      cy="50%"
+                      cy="35%"
                       outerRadius={80}
                       fill="#8884d8"
                       label
@@ -505,7 +566,9 @@ function ClassDetails() {
                         />
                       ))}
                     </Pie>
-                    <Legend />
+
+                    <Legend layout="radial" align="center" verticalAlign="bottom" />
+                    
                   </PieChart>
 
                 </div>
