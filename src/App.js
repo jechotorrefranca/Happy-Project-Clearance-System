@@ -1,9 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./components/AuthContext";
 
-import PrivateRoute from "./components/PrivateRoute";
-import RoleBasedRoute from "./components/RoleBasedRoute";
-import AccessDenied from "./components/AccessDeniedComponent";
 import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
 import Teachers from "./pages/Teachers";
@@ -39,184 +36,37 @@ import Settings from "./pages/Settings";
 
 const router = createBrowserRouter([
   { path: "/", element: <SignIn /> },
-  { path: "/forgot-password", element: <ForgotPassword /> },
-  { path: "/access-denied", element: <AccessDenied /> },
-  { path: "/dashboard", element: <PrivateRoute><Dashboard /></PrivateRoute> },
-  { path: "/settings", element: <PrivateRoute><Settings /></PrivateRoute> },
-  { 
-    path: "/disciplinary-records", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'Character Renewal Office', 'Guidance Office', 'Office of The Dean', 'OSAS']}>
-      <DisciplinaryRecords />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/classes", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin']}>
-      <Classes />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/student-master-list", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'faculty', 'Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'OSAS']}>
-      <StudentsMasterList />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/students", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'Finance', 'OSAS', 'Office of the Registrar']}>
-      <Students />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/teachers", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'Office of the Registrar', 'Director/Principal']}>
-      <Teachers />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/school-events", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'faculty', 'Office of The Dean', 'Student Council', 'OSAS']}>
-      <SchoolEvents />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/send-payment-confirmation", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'Finance']}>
-      <SendPaymentConfirmationEmail />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/user-management", 
-    element: <RoleBasedRoute allowedRoles={['super-admin']}>
-      <UserManagement />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/audit-log", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin']}>
-      <AuditLogs />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/view-messages", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'faculty', 'Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
-      <ViewMessages />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/approve-clearance-faculty", 
-    element: <RoleBasedRoute allowedRoles={['faculty']}>
-      <ApproveClearanceTeachers />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/manage-requirements", 
-    element: <RoleBasedRoute allowedRoles={['faculty']}>
-      <ManageRequirements />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/view-classes", 
-    element: <RoleBasedRoute allowedRoles={['faculty']}>
-      <ViewClasses />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/student-clearance", 
-    element: <RoleBasedRoute allowedRoles={['student']}>
-      <StudentClearance />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/view-messages-student", 
-    element: <RoleBasedRoute allowedRoles={['student']}>
-      <ViewMessagesStudent />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/approve-clearance-office", 
-    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
-      <ApproveClearanceOffice />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/manage-office-requirements", 
-    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
-      <ManageOfficeRequirements />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/create-teacher", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin']}>
-      <CreateTeacherPage />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/create-class", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin']}>
-      <CreateClass />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/create-student", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin']}>
-      <CreateStudent />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/add-requirement", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'faculty']}>
-      <AddRequirement />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/create-user", 
-    element: <RoleBasedRoute allowedRoles={['super-admin']}>
-      <CreateUser />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/add-office-requirement", 
-    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
-      <AddOfficeRequirement />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/view-classes", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'faculty']}>
-      <ViewClasses />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/class-details/:classId", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'faculty']}>
-      <ClassDetails />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/class-details-adviser/:classId", 
-    element: <RoleBasedRoute allowedRoles={['faculty']}>
-      <ClassDetailsForAdviser />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/chat/:recipientId", 
-    element: <PrivateRoute>
-      <Chat />
-    </PrivateRoute> 
-  },
-  { 
-    path: "/update-class/:classId", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin']}>
-      <UpdateClass />
-    </RoleBasedRoute> 
-  },
-  { 
-    path: "/office-clearance-manual", 
-    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
-      <OfficeClearanceManual />
-    </RoleBasedRoute> 
-  }
+  { path: "/dashboard", element: <Dashboard /> },
+  { path: "/teachers", element: <Teachers /> },
+  { path: "/create-teacher", element: <CreateTeacherPage /> },
+  { path: "/classes", element: <Classes /> },
+  { path: "/create-class", element: <CreateClass /> },
+  { path: "/students", element: <Students /> },
+  { path: "/create-student", element: <CreateStudent /> },
+  { path: "/add-requirement", element: <AddRequirement /> },
+  { path: "/student-clearance", element: <StudentClearance /> },
+  { path: "/approve-clearance-faculty", element: <ApproveClearanceTeachers />},
+  { path: "/user-management", element: <UserManagement /> },
+  { path: "/create-user", element: <CreateUser />},
+  { path: "/add-office-requirement", element: <AddOfficeRequirement />},
+  { path: "/approve-clearance-office", element: <ApproveClearanceOffice />},
+  { path: "/view-classes", element: <ViewClasses />},
+  { path: "/class-details/:classId", element: <ClassDetails />},
+  { path: "/class-details-adviser/:classId", element: <ClassDetailsForAdviser />},
+  { path: "/audit-log", element: <AuditLogs />},
+  { path: "/student-master-list", element: <StudentsMasterList />},
+  { path: "/chat/:recipientId", element: <Chat />},
+  { path: "/view-messages", element: <ViewMessages />},
+  { path: "/view-messages-student", element: <ViewMessagesStudent />},
+  { path: "/disciplinary-records", element: <DisciplinaryRecords />},
+  { path: "/update-class/:classId", element: <UpdateClass />},
+  { path: "/manage-requirements", element: <ManageRequirements />},
+  { path: "/manage-office-requirements", element: <ManageOfficeRequirements />},
+  { path: "/office-clearance-manual", element: <OfficeClearanceManual />},
+  { path: "/forgot-password", element: <ForgotPassword />},
+  { path: "/school-events", element: <SchoolEvents />},
+  { path: "/send-payment-confirmation", element: <SendPaymentConfirmationEmail />},
+  { path: "/settings", element: <Settings /> },
 ]);
 
 function App() {
