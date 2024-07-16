@@ -1,0 +1,10 @@
+.modal {
+    width: clamp(10%, 700px, 90%);
+
+    margin: auto;
+    padding: 2rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

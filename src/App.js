@@ -36,6 +36,11 @@ import ForgotPassword from "./pages/ForgotPassword";
 import SchoolEvents from "./pages/SchoolEvents";
 import SendPaymentConfirmationEmail from "./pages/SendPaymentConfirmationEmail";
 import Settings from "./pages/Settings";
+import ActivityLog from "./pages/ActivityLog";
+import Notification from "./pages/Notifications";
+import StudentDashboard from "./pages/StudentDashboard";
+import ChangePassword from "./pages/ChangePassword";
+
 
 const router = createBrowserRouter([
   { path: "/", element: <SignIn /> },
@@ -131,6 +136,30 @@ const router = createBrowserRouter([
     path: "/view-messages-student", 
     element: <RoleBasedRoute allowedRoles={['student']}>
       <ViewMessagesStudent />
+    </RoleBasedRoute> 
+  },
+  { 
+    path: "/activitylog", 
+    element: <RoleBasedRoute allowedRoles={['student']}>
+      <ActivityLog />
+    </RoleBasedRoute> 
+  },
+  { 
+    path: "/notifications", 
+    element: <RoleBasedRoute allowedRoles={['student']}>
+      <Notification />
+    </RoleBasedRoute> 
+  },
+  { 
+    path: "/studentdashboard", 
+    element: <RoleBasedRoute allowedRoles={['student']}>
+      <StudentDashboard />
+    </RoleBasedRoute> 
+  },
+  { 
+    path: "/changepassword", 
+    element: <RoleBasedRoute allowedRoles={['student']}>
+      <ChangePassword />
     </RoleBasedRoute> 
   },
   { 

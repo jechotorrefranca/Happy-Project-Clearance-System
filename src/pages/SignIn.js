@@ -39,7 +39,7 @@ const SignIn = () => {
               navigate("/approve-clearance-faculty");
               break;
             case "student":
-              navigate("/student-clearance");
+              navigate("/studentdashboard");
               break;
             case "super-admin":
               navigate("/user-management");

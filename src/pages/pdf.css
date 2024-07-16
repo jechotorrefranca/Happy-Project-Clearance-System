@@ -1,0 +1,25 @@
+@media print {
+  @page {
+    size: A4 portrait;
+  }
+
+  .print-container {
+    width: 100%; /* Full width of the page */
+    height: 100%; /* Full height of the page */
+    margin: 0 auto;
+    padding: 2rem; /* Adjust padding as needed */
+    font-size: 14px; /* Example: Adjust font size for print */
+  }
+
+  /* Example: Hide elements not needed in the PDF */
+  .hide-on-print {
+    display: none;
+  }
+
+  /* Example: Show elements only for print */
+  .show-on-print {
+    display: block;
+  }
+
+
+}

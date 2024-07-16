@@ -1,20 +1,24 @@
-import React, { useState, useEffect, Fragment } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
+import { useAuth } from '../components/AuthContext';
+import { motion } from 'framer-motion';
 import {
   Bars3Icon,
   XMarkIcon,
   HomeIcon,
-  DocumentDuplicateIcon,
-  AcademicCapIcon,
-  CreditCardIcon,
-  ChartBarIcon,
-  UserGroupIcon,
-  CogIcon,
-  ClockIcon,
-  LockClosedIcon,
+  DocumentCheckIcon,
+  ClipboardDocumentListIcon,
+  BellIcon,
   InboxIcon,
-  ArrowLeftOnRectangleIcon,
+  LockClosedIcon
 } from "@heroicons/react/24/outline";
+
+import {
+  BellAlertIcon,
+  InboxStackIcon
+} from "@heroicons/react/24/solid";
+
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import {
   getFirestore,
@@ -22,39 +26,104 @@ import {
   where,
   query,
   getDocs,
+  onSnapshot,
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { Spinner } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate, useLocation } from "react-router-dom";
 
 const auth = getAuth();
 const db = getFirestore();
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: HomeIcon, current: false },
-  {
-    name: "Clearance",
-    href: "/student-clearance",
-    icon: DocumentDuplicateIcon,
-    current: true,
-  },
-  { name: "Inbox", href: "/view-messages-student", icon: InboxIcon, current: false },
-  { name: "Settings", href: "#", icon: CogIcon, current: false, children: [] },
+const initialNavigation = [
+  { name: "Dashboard", href: "/studentdashboard", icon: HomeIcon, current: false },
+  { name: "Clearance", href: "/student-clearance", icon: DocumentCheckIcon, current: false},
+  { name: "Notification", href: "/notifications", icon: BellIcon, current: false},
+  { name: "Messages", href: "/view-messages-student", icon: InboxIcon, current: false },
+  { name: "Activity Log", href: "/activitylog", icon: ClipboardDocumentListIcon, current: false },
+  { name: "Change Password", href: "/changepassword", icon: LockClosedIcon, current: false, children: [] },
 ];
-
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function Sidebar({ children }) {
+export default function SidebarStudent({ children }) {
+  const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [navigation, setNavigation] = useState(initialNavigation);
+  const location = useLocation();
+  const [notification, setNotification] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const filteredItems = navigation.filter(item => item.name !== "Notification" && item.name !== "Messages");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(event.target) &&
+      event.target.closest('.dropdown-toggle') === null
+    ) {
+      setDropdownOpen(false);    
+    }
+  };
+
+  window.addEventListener('mousedown', handleClickOutside);
+
+  return () => {
+    window.removeEventListener('mousedown', handleClickOutside);
+  };
+}, []);
+
+useEffect(() => {
+  if (!currentUser) return;
+
+  const notifCollectionRef = collection(db, 'studentNotification');
+  const q = query(notifCollectionRef, 
+    where("studentId", "==", currentUser.uid), 
+    where("isRead", "==", false)
+  );
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    if (!snapshot.empty) {
+      const notifications = snapshot.docs.map((doc) => doc.data());
+      setNotification(notifications);
+    } else {
+      setNotification([]);
+    }
+  });
+
+  return () => unsubscribe();
+}, [currentUser]);
+
+useEffect(() => {
+  if (!currentUser) return;
+
+  const msgCollectionRef = collection(db, 'inquiries');
+  const q = query(msgCollectionRef, 
+    where("recipientId", "==", currentUser.uid), 
+    where("read", "==", false)
+  );
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    if (!snapshot.empty) {
+      const messages = snapshot.docs.map((doc) => doc.data());
+      setMessages(messages);
+    } else {
+      setMessages([]);
+    }
+  });
+
+  return () => unsubscribe();
+}, [currentUser]);
+
 
   useEffect(() => {
     onAuthStateChanged(auth, async (user) => {
@@ -67,12 +136,12 @@ export default function Sidebar({ children }) {
           if (!querySnapshot.empty) {
             const userDoc = querySnapshot.docs[0];
             const userData = userDoc.data();
+            setUserEmail(userData.email);
             setUserRole(userData.role);
           }
 
           console.log("UID: ", user.uid);
           console.log("Role: ", userRole);
-          setCurrentUser(user);
         } catch (error) {
           console.error("Error fetching user data:", error);
         } finally {
@@ -82,24 +151,58 @@ export default function Sidebar({ children }) {
     });
   }, [userRole]);
 
+  useEffect(() => {
+    const updatedNavigation = initialNavigation.map((item) => {
+      if (item.name === "Notification") {
+        return {
+          ...item,
+          icon: notification.length > 0 ? BellAlertIcon : BellIcon,
+          current: item.href === location.pathname,
+        };
+      } else if (item.name === "Messages") {
+        return {
+          ...item,
+          icon: messages.length > 0 ? InboxStackIcon : InboxIcon,
+          current: item.href === location.pathname,
+        };
+      } else {
+        return {
+          ...item,
+          current: item.href === location.pathname,
+        };
+      }
+    });
+  
+    setNavigation(updatedNavigation);
+  }, [location.pathname, notification, messages]);
+  
+
   const handleLogout = async () => {
     try {
       const auditLogsRef = collection(db, "auditLogs");
       await addDoc(auditLogsRef, {
         timestamp: serverTimestamp(),
-        userId: currentUser.uid, 
+        userId: currentUser.uid,
         actionType: "logout",
-        email: currentUser.email, 
+        email: currentUser.email,
       });
 
       await signOut(auth);
-
-      navigate("/"); 
-
+      navigate("/");
     } catch (error) {
       console.error("Error during logout:", error);
     }
   };
+
+  const getInitials = (email) => {
+    if (!email) return "";
+    const names = email.split("@")[0].split(/\.|_|-/);
+    return names
+      .map((n) => n[0].toUpperCase())
+      .slice(0, 2)
+      .join("");
+  };
+  
 
   return (
     <>
@@ -162,7 +265,7 @@ export default function Sidebar({ children }) {
                           </button>
                         </div>
                       </Transition.Child>
-                      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2">
+                      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-blue-300 px-6 pb-2">
                         <div className="flex h-16 shrink-0 items-center">
                           <img
                             className="h-10 w-auto"
@@ -172,28 +275,25 @@ export default function Sidebar({ children }) {
                         </div>
                         {userRole && (
                           <nav className="flex flex-1 flex-col">
-                            <ul
-                              role="list"
-                              className="flex flex-1 flex-col gap-y-7"
-                            >
+                            <ul className="flex flex-1 flex-col gap-y-7">
                               <li>
-                                <ul role="list" className="-mx-2 space-y-1">
-                                  {navigation.map((item) => (
+                                <ul className="-mx-2 space-y-1">
+                                  {filteredItems.map((item) => (
                                     <li key={item.name}>
                                       <a
                                         href={item.href}
                                         className={classNames(
                                           item.current
-                                            ? "bg-gray-50 text-indigo-600"
-                                            : "text-gray-700 hover:text-indigo-600 hover:bg-gray-50",
+                                            ? "bg-[#fff2c1] text-[#494124]"
+                                            : "text-gray-700 hover:text-[#494124] hover:bg-[#fffbec]",
                                           "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                                         )}
                                       >
                                         <item.icon
                                           className={classNames(
                                             item.current
-                                              ? "text-indigo-600"
-                                              : "text-gray-400 group-hover:text-indigo-600",
+                                              ? "text-[#494124]"
+                                              : "text-gray-400 group-hover:text-[#494124]",
                                             "h-6 w-6 shrink-0"
                                           )}
                                           aria-hidden="true"
@@ -216,7 +316,7 @@ export default function Sidebar({ children }) {
 
             {/* Static sidebar for desktop */}
             <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-              <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
+              <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-blue-200 px-6">
                 <div className="flex h-16 shrink-0 items-center">
                   <img
                     className="h-10 w-auto"
@@ -226,25 +326,25 @@ export default function Sidebar({ children }) {
                 </div>
                 {userRole && (
                   <nav className="flex flex-1 flex-col">
-                    <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                    <ul className="flex flex-1 flex-col gap-y-7">
                       <li>
-                        <ul role="list" className="-mx-2 space-y-1">
+                        <ul className="-mx-2 space-y-1">
                           {navigation.map((item) => (
                             <li key={item.name}>
                               <a
                                 href={item.href}
                                 className={classNames(
                                   item.current
-                                    ? "bg-gray-50 text-indigo-600"
-                                    : "text-gray-700 hover:text-indigo-600 hover:bg-gray-50",
+                                    ? "bg-[#fff2c1] text-[#494124]"
+                                    : "text-gray-700 hover:text-[#494124] hover:bg-[#fffbec]",
                                   "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                                 )}
                               >
                                 <item.icon
                                   className={classNames(
                                     item.current
-                                      ? "text-indigo-600"
-                                      : "text-gray-400 group-hover:text-indigo-600",
+                                      ? "text-[#494124]"
+                                      : "text-gray-400 group-hover:text-[#494124]",
                                     "h-6 w-6 shrink-0"
                                   )}
                                   aria-hidden="true"
@@ -256,28 +356,38 @@ export default function Sidebar({ children }) {
                         </ul>
                       </li>
                       <li className="-mx-6 mt-auto">
-                        <div className="relative">
+                        <div
+                          className="relative"
+                        >
                           <button
                             onClick={() => setDropdownOpen(!dropdownOpen)}
-                            className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50"
+                            className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-blue-300 w-full transition"
                           >
-                            <img
-                              className="h-8 w-8 rounded-full bg-gray-50"
-                              src="https://scontent.fcrk3-2.fna.fbcdn.net/v/t39.30808-6/434160685_3684034858582066_7920754165546455039_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=5f2048&_nc_eui2=AeGhBHbIAGejJ9X4kVIO8GJ_E7K8DJZKydYTsrwMlkrJ1okJf462xxpn1XdWPFBCtGI_UNMDSsljXOBo0iVVH51B&_nc_ohc=gTd2lOAtIMQQ7kNvgHc96QU&_nc_ht=scontent.fcrk3-2.fna&oh=00_AYABD6tOJ6q3oEMHpbOR1ypGoVLs9klEQEGaXXiM4ubxFQ&oe=6662D828"
-                              alt=""
-                            />
+                            <span className="h-8 w-8 flex items-center justify-center rounded-full bg-[#ffeca4] text-xl font-bold text-blue-400">
+                              {getInitials(currentUser?.email || "User")}
+                            </span>
                             <span className="sr-only">Your profile</span>
-                            <span aria-hidden="true">Jocelyn Tejada</span>
+                            <span aria-hidden="true">
+                              {currentUser?.email || "User"}{" "}
+                            </span>{" "}
                           </button>
+                          
                           {dropdownOpen && (
-                            <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
-                              <button
-                                onClick={handleLogout}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                              >
-                                Logout
-                              </button>
-                            </div>
+                            <motion.div
+                            ref={dropdownRef}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute right-2 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5"
+                          >
+                            <button
+                              className="dropdown-toggle block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                              onClick={handleLogout}
+                            >
+                              Logout
+                            </button>
+                          </motion.div>
                           )}
                         </div>
                       </li>
@@ -287,7 +397,8 @@ export default function Sidebar({ children }) {
               </div>
             </div>
 
-            <div className="sticky top-0 z-40 flex items-center gap-x-6 bg-white px-4 py-4 shadow-sm sm:px-6 lg:hidden">
+            {/* Sidebar Hidden */}
+            <div className="sticky top-0 z-40 flex items-center gap-x-6 bg-blue-300 px-4 py-4 shadow-sm sm:px-6 lg:hidden">
               <button
                 type="button"
                 className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
@@ -299,32 +410,69 @@ export default function Sidebar({ children }) {
               <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
                 Dashboard
               </div>
+
+              <a href="/notifications">
+                <span className="sr-only">Notification</span>
+                  <motion.div 
+                  whileHover={{scale: 1.1, backgroundColor: '#eeeee4'}}
+                  whileTap={{scale: 0.80}}
+                  
+                  className="flex items-center rounded-full p-1 text-sm font-semibold text-gray-800">
+                    {notification.length > 0 ? (
+                      <BellAlertIcon className="h-6 w-6 text-red-400" />
+                    ) : (
+                      <BellIcon className="h-6 w-6" />
+                    )}
+                </motion.div>
+              </a>
+
+              <a href="/view-messages-student">
+                <span className="sr-only">Messages</span>
+                  <motion.div 
+                  whileHover={{scale: 1.1, backgroundColor: '#eeeee4'}}
+                  whileTap={{scale: 0.80}}
+                  
+                  className="flex items-center rounded-full p-1 text-sm font-semibold text-gray-800">
+                    {messages.length > 0 ? (
+                      <InboxStackIcon className="h-6 w-6 text-red-400" />
+                    ) : (
+                      <InboxIcon className="h-6 w-6" />
+                    )}
+                </motion.div>
+              </a>
+
               <div className="relative">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center"
                 >
                   <span className="sr-only">Your profile</span>
-                  <img
-                    className="h-8 w-8 rounded-full bg-gray-50"
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                    alt=""
-                  />
+                  <span className="h-8 w-8 flex items-center justify-center rounded-full bg-[#ffeca4] text-xl font-bold text-blue-400">
+                    {getInitials(currentUser?.email || "User")}
+                  </span>
                 </button>
                 {dropdownOpen && (
-                  <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                  <motion.div
+                    ref={dropdownRef}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5"
+                  >
                     <button
                       onClick={handleLogout}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                     >
                       Logout
                     </button>
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </div>
+            
 
-            <main className="py-10 lg:pl-72">
+            <main className="py-10 lg:pl-72 bg-white">
               <div className="px-4 sm:px-6 lg:px-8">{children}</div>
             </main>
           </div>
