@@ -279,12 +279,12 @@ const StudentDashboard = () => {
           </div>
 
           {/* Regular Subjects Table */}
-          <h2 className="text-2xl font-bold mb-4 text-center bg-gray-300 p-5">Student Clearance</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center bg-gray-300 p-5">Student Clearance</h2>
           <table className="min-w-full bg-white border border-gray-200">
             <thead>
               <tr>
-                <th className="py-5 border border-gray-400 bg-blue-300 text-base sm:text-xl">Subject</th>
-                <th className="py-5 border border-gray-400 text-center bg-[#fff2c1] text-base sm:text-xl">
+                <th className="py-5 px-2 border border-gray-400 bg-blue-300 sm:text-base text-sm">Subject</th>
+                <th className="py-5 px-2 border border-gray-400 text-center bg-[#fff2c1] sm:text-base text-sm">
                   Cleared
                 </th>
               </tr>
@@ -293,7 +293,7 @@ const StudentDashboard = () => {
               {regularSubjects.map((subject) => (
                 <React.Fragment key={subject}>
                   <tr>
-                    <td className="border border-gray-400 px-4 py-2 bg-blue-100">
+                    <td className="border border-gray-400 px-4 py-2 bg-blue-100 text-sm  sm:text-base">
                       {subject}
                     </td>
                     <td className="border border-gray-400 px-4 py-2 text-center bg-[#fffcf2]">
@@ -318,14 +318,14 @@ const StudentDashboard = () => {
           {/* Office Requirements Table */}
           {specialSubjects.length > 0 && (
             <div className="mt-8">
-              <h3 className="text-2xl font-bold mb-4 text-center bg-gray-300 p-5">Office Requirements</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-4 text-center bg-gray-300 p-5">Office Requirements</h3>
               <table className="min-w-full bg-white border border-gray-200">
                 <thead>
                   <tr>
-                    <th className="py-5 border border-gray-400 bg-blue-300 text-base sm:text-xl">
+                    <th className="py-5 px-2 border border-gray-400 bg-blue-300 sm:text-base text-sm">
                       Office Names
                     </th>
-                    <th className="py-5 border border-gray-400 text-center bg-[#fff2c1] text-base sm:text-xl">
+                    <th className="py-5 px-2 border border-gray-400 text-center bg-[#fff2c1] sm:text-base text-sm">
                       Cleared
                     </th>
                   </tr>
@@ -334,7 +334,7 @@ const StudentDashboard = () => {
                   {specialSubjects.map((office) => (
                     <React.Fragment key={office}>
                       <tr>
-                        <td className="border border-gray-400 px-4 py-2 bg-blue-100">
+                        <td className="border border-gray-400 px-4 py-2 bg-blue-100 text-sm  sm:text-base">
                           {office}
                         </td>
                         <td className="border border-gray-400 px-4 py-2 text-center bg-[#fffcf2]">
