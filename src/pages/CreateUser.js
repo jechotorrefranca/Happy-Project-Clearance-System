@@ -33,6 +33,7 @@ function CreateUser() {
 
   const otherRoles = [
     "Librarian",
+    "Guidance Office",
     "Character Renewal Office",
     "Finance",
     "Basic Education Registrar",

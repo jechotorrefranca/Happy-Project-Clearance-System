@@ -440,8 +440,8 @@ function ClassDetails() {
             {selectedSubject && (
               <>
                 <div ref={componentRef}>
-                  <div className="flex justify-center items-center text-center bg-blue-300 p-3 rounded mb-4">
-                    <h2 className="text-2xl text-blue-950 font-bold">Students - {selectedSubject}</h2>
+                  <div className="flex justify-center items-center text-center bg-blue-300 p-3 rounded mb-4 header">
+                    <h2 className="text-2xl text-blue-950 font-bold header">Students - {selectedSubject}</h2>
                   </div>
 
                   <div className="w-full overflow-auto">
@@ -450,8 +450,8 @@ function ClassDetails() {
                     ) : (
                       <table className="min-w-full bg-white border border-gray-200">
                         <thead>
-                          <tr className="bg-blue-300">
-                            <th className="py-3 px-2 border border-gray-400">
+                          <tr className="bg-blue-300 header">
+                            <th className="py-3 px-2 border border-gray-400 hide-on-print">
                               <input
                                 type="checkbox"
                                 checked={
@@ -466,15 +466,15 @@ function ClassDetails() {
                             <th className="py-3 px-2 border border-gray-400 text-center">
                               Cleared
                             </th>
-                            <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]">
+                            <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1] hide-on-print">
                               Actions
                             </th>
                           </tr>
                         </thead>
                         <tbody>
                           {getFilteredStudents().map((student) => (
-                            <tr key={student.uid} className="custom-row bg-blue-100 hover:bg-blue-200">
-                              <td className="border border-gray-400 px-4 py-2 text-center">
+                            <tr key={student.uid} className="custom-row bg-blue-100 hover:bg-blue-200 row">
+                              <td className="border border-gray-400 px-4 py-2 text-center hide-on-print">
                                 <input
                                   type="checkbox"
                                   checked={selectedStudentIds.includes(student.uid)}
@@ -500,7 +500,7 @@ function ClassDetails() {
                                   />
                                 )}
                               </td>
-                              <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
+                              <td className="custom-cell border border-gray-400 px-4 py-2 text-center hide-on-print">
                                 {!student.clearance[selectedSubject] && (
                                   <button
                                     onClick={() => handleClearStudent(student.uid)}

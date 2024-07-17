@@ -366,193 +366,197 @@ function ClassDetailsForAdviser() {
 
             </div>
 
-            <div>
-              <div className="flex justify-center items-center text-center bg-blue-300 p-3 rounded mb-4">
-                <h2 className="text-2xl text-blue-950 font-bold">Advisory Class: {classData.sectionName}</h2>
+            <div ref={componentRef}>
+              <div>
+                <div className="flex justify-center items-center text-center bg-blue-300 p-3 rounded mb-4 header">
+                  <h2 className="text-2xl text-blue-950 font-bold header">Advisory Class: {classData.sectionName}</h2>
+                </div>
               </div>
-            </div>
 
-            <div className="w-full overflow-auto">
-              {students.length === 0 ? (
-                <p>No students found.</p>
-              ) : (
-                <div className="overflow-x-auto" ref={componentRef}>
+              <div className="w-full overflow-auto">
+                {students.length === 0 ? (
+                  <p>No students found.</p>
+                ) : (
+                  <div className="overflow-x-auto">
 
 
-                  <table className="min-w-full bg-white border border-gray-200 rounded-md shadow-md">
-                    <thead>
-                      <tr className="bg-blue-300">
-                        <th className="py-3 px-2 border border-gray-400">
-                          <input type="checkbox" onChange={handleSelectAllStudents} />
-                        </th>
-                        <th className="py-3 px-2 border border-gray-400">
-                          Student ID
-                        </th>
-                        <th className="py-3 px-2 border border-gray-400">
-                          Name
-                        </th>
-                        <th className="py-3 px-2 border border-gray-400">
-                          Disciplinary Records
-                        </th>
-                        <th className="py-3 px-2 border border-gray-400">
-                          Completion (%)
-                        </th>
-                        <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]">
-                          Actions
-                        </th>
-                        <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {students.map((student) => (
-                        <React.Fragment key={student.uid}>
-                          <tr
-                            key={student.uid}
-                            onClick={() => handleStudentClick(student.uid)}
-                            className="custom-row bg-blue-100 hover:bg-blue-200 cursor-pointer"
-                          >
-                            <td className="border border-gray-400 px-4 py-2 text-center">
-                              <input
-                                type="checkbox"
-                                checked={selectedStudentIds.includes(student.uid)}
-                                onChange={() => handleSelectStudent(student.uid)}
-                                disabled={student.clearance["Class Adviser"]}
-                              />
-                            </td>
-                            <td className="border border-gray-400 px-4 py-2 text-center">
-                              {student.studentId}
-                            </td>
-                            <td className="border border-gray-400 px-4 py-2 text-center">
-                              {student.fullName}
-                            </td>
-                            <td className="border border-gray-400 px-4 py-2 text-center">
-                              {student.disciplinaryRecords.length}
-                            </td>
-                            <td className="border border-gray-400 px-4 py-2 text-center">
-                              {student.completionPercentage}%
-                            </td>
-                            <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
-                              {!student.clearance["Class Adviser"] && (
-                                <motion.button
-                                  whileHover={{scale: 1.03}}
-                                  whileTap={{scale: 0.95}}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleClearStudent(student.uid);
-                                  }}
-                                  className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring focus:ring-green-300"
-                                >
-                                  Clear
-                                </motion.button>
-                              )}
-                            </td>
-                            <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
-                              <FontAwesomeIcon
-                                icon={
-                                  expandedStudent === student.uid
-                                    ? faAngleUp
-                                    : faAngleDown
-                                }
-                              />
-                            </td>
-                          </tr>
+                    <table className="min-w-full bg-white border border-gray-200 rounded-md shadow-md">
+                      <thead>
+                        <tr className="bg-blue-300 header">
+                          <th className="py-3 px-2 border border-gray-400 hide-on-print">
+                            <input type="checkbox" onChange={handleSelectAllStudents} />
+                          </th>
+                          <th className="py-3 px-2 border border-gray-400">
+                            Student ID
+                          </th>
+                          <th className="py-3 px-2 border border-gray-400">
+                            Name
+                          </th>
+                          <th className="py-3 px-2 border border-gray-400">
+                            Disciplinary Records
+                          </th>
+                          <th className="py-3 px-2 border border-gray-400">
+                            Completion (%)
+                          </th>
+                          <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1] hide-on-print">
+                            Actions
+                          </th>
+                          <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1] hide-on-print"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {students.map((student) => (
+                          <React.Fragment key={student.uid}>
+                            <tr
+                              key={student.uid}
+                              onClick={() => handleStudentClick(student.uid)}
+                              className="custom-row bg-blue-100 hover:bg-blue-200 cursor-pointer row"
+                            >
+                              <td className="border border-gray-400 px-4 py-2 text-center hide-on-print">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedStudentIds.includes(student.uid)}
+                                  onChange={() => handleSelectStudent(student.uid)}
+                                  disabled={student.clearance["Class Adviser"]}
+                                />
+                              </td>
+                              <td className="border border-gray-400 px-4 py-2 text-left">
+                                {student.studentId}
+                              </td>
+                              <td className="border border-gray-400 px-4 py-2 text-left">
+                                {student.fullName}
+                              </td>
+                              <td className="border border-gray-400 px-4 py-2 text-center">
+                                {student.disciplinaryRecords.length}
+                              </td>
+                              <td className="border border-gray-400 px-4 py-2 text-center">
+                                {student.completionPercentage}%
+                              </td>
+                              <td className="custom-cell border border-gray-400 px-4 py-2 text-center hide-on-print">
+                                {!student.clearance["Class Adviser"] && (
+                                  <motion.button
+                                    whileHover={{scale: 1.03}}
+                                    whileTap={{scale: 0.95}}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleClearStudent(student.uid);
+                                    }}
+                                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring focus:ring-green-300"
+                                  >
+                                    Clear
+                                  </motion.button>
+                                )}
+                              </td>
+                              <td className="custom-cell border border-gray-400 px-4 py-2 text-center hide-on-print">
+                                <FontAwesomeIcon
+                                  icon={
+                                    expandedStudent === student.uid
+                                      ? faAngleUp
+                                      : faAngleDown
+                                  }
+                                />
+                              </td>
+                            </tr>
 
-                          {expandedStudent === student.uid && (
-                            <tr className="bg-blue-50">
-                              <td colSpan={6} className="border px-4 py-2">
-                                <div className="mb-4 p-5">
-                                  <div className="bg-blue-300 p-3 flex justify-center items-center mb-2">
-                                    <h4 className="font-semibold text-xl ">Clearance</h4>
+                            {expandedStudent === student.uid && (
+                              <tr className="bg-blue-50">
+                                <td colSpan={7} className="border px-4 py-2">
+                                  <div className="mb-4 p-5">
+                                    <div className="bg-blue-300 p-3 flex justify-center items-center mb-2">
+                                      <h4 className="font-semibold text-xl">Clearance</h4>
 
-                                  </div>
-                                  <table className="min-w-full">
-                                    <thead>
-                                      <tr className="bg-blue-200">
-                                        <th className=" py-3 px-2 border border-gray-400">
-                                          Subject
-                                        </th>
-                                        <th className=" py-3 px-2 border border-gray-400">
-                                          Status
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {Object.entries(student.clearance)
-                                        .sort(([a], [b]) => a.localeCompare(b))
-                                        .map(([subject, isCleared]) => (
-                                          <tr key={subject} className=" bg-blue-100 hover:bg-blue-200">
-                                            <td className="border border-gray-400 px-4 py-2">
-                                              {subject}
-                                            </td>
-                                            <td className="border border-gray-400 px-4 py-2 text-center">
-                                              {isCleared ? (
-                                                <FontAwesomeIcon
-                                                  icon={faCheckCircle}
-                                                  className="text-green-500"
-                                                />
-                                              ) : (
-                                                <FontAwesomeIcon
-                                                  icon={faTimesCircle}
-                                                  className="text-red-500"
-                                                />
-                                              )}
-                                            </td>
-                                          </tr>
-                                        ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-
-                                {student.disciplinaryRecords.length > 0 && (
-                                  <div>
-                                    <h4 className="font-medium mb-2">
-                                      Disciplinary Records:
-                                    </h4>
+                                    </div>
                                     <table className="min-w-full">
                                       <thead>
-                                        <tr>
-                                          <th className="py-2 border-b border-gray-200">
-                                            Date
+                                        <tr className="bg-blue-200">
+                                          <th className=" py-3 px-2 border border-gray-400">
+                                            Subject
                                           </th>
-                                          <th className="py-2 border-b border-gray-200">
-                                            Violations
-                                          </th>
-                                          <th className="py-2 border-b border-gray-200">
-                                            Sanctions
+                                          <th className=" py-3 px-2 border border-gray-400">
+                                            Status
                                           </th>
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {student.disciplinaryRecords.map((record) => (
-                                          <tr key={record.timestamp}>
-                                            <td className="border px-4 py-2">
-                                              {moment(
-                                                record.timestamp.toDate()
-                                              ).format("YYYY-MM-DD")}
-                                            </td>
-                                            <td className="border px-4 py-2">
-                                              {record.violations.join(", ")}
-                                            </td>
-                                            <td className="border px-4 py-2">
-                                              {record.sanctions.join(", ")}
-                                            </td>
-                                          </tr>
-                                        ))}
+                                        {Object.entries(student.clearance)
+                                          .sort(([a], [b]) => a.localeCompare(b))
+                                          .map(([subject, isCleared]) => (
+                                            <tr key={subject} className=" bg-blue-100 hover:bg-blue-200">
+                                              <td className="border border-gray-400 px-4 py-2">
+                                                {subject}
+                                              </td>
+                                              <td className="border border-gray-400 px-4 py-2 text-center">
+                                                {isCleared ? (
+                                                  <FontAwesomeIcon
+                                                    icon={faCheckCircle}
+                                                    className="text-green-500"
+                                                  />
+                                                ) : (
+                                                  <FontAwesomeIcon
+                                                    icon={faTimesCircle}
+                                                    className="text-red-500"
+                                                  />
+                                                )}
+                                              </td>
+                                            </tr>
+                                          ))}
                                       </tbody>
                                     </table>
                                   </div>
-                                )}
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+
+                                  {student.disciplinaryRecords.length > 0 && (
+                                    <div>
+                                      <h4 className="font-medium mb-2">
+                                        Disciplinary Records:
+                                      </h4>
+                                      <table className="min-w-full">
+                                        <thead>
+                                          <tr>
+                                            <th className="py-2 border-b border-gray-200">
+                                              Date
+                                            </th>
+                                            <th className="py-2 border-b border-gray-200">
+                                              Violations
+                                            </th>
+                                            <th className="py-2 border-b border-gray-200">
+                                              Sanctions
+                                            </th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {student.disciplinaryRecords.map((record) => (
+                                            <tr key={record.timestamp}>
+                                              <td className="border px-4 py-2">
+                                                {moment(
+                                                  record.timestamp.toDate()
+                                                ).format("YYYY-MM-DD")}
+                                              </td>
+                                              <td className="border px-4 py-2">
+                                                {record.violations.join(", ")}
+                                              </td>
+                                              <td className="border px-4 py-2">
+                                                {record.sanctions.join(", ")}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+              </div>
 
             </div>
+
 
 
 
