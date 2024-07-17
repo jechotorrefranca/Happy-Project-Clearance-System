@@ -39,7 +39,7 @@ const StudentDashboard = () => {
   const [greetings, setGreetings] = useState(null);
   const [loading, setLoading] = useState(false);
   const componentRef = useRef(null);
-  const [hidden, setHidden] = useState(true);
+  const [hidden, setHidden] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [notcomplete, setNotcomplete] = useState(false);
   
