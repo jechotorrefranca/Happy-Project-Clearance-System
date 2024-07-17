@@ -4,559 +4,287 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
+  onSnapshot,
   updateDoc,
-  doc,
-  deleteDoc,
-  addDoc,
-  serverTimestamp,
+  orderBy
 } from "firebase/firestore";
-import { db, storage } from "../firebaseConfig";
+import { db } from "../firebaseConfig";
 import { useAuth } from "../components/AuthContext";
 import Sidebar from "../components/Sidebar";
 import moment from "moment";
-import Modal from "../components/Modal";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { motion, AnimatePresence } from 'framer-motion';
+import ChatDesign from "../components/Chat/ChatDesign";
+import UserChatDesign from "../components/Chat/UserChatDesign";
+import {
+  DocumentMagnifyingGlassIcon
+} from "@heroicons/react/24/solid";
 
 function ViewMessages() {
   const { currentUser } = useAuth();
-  const [messages, setMessages] = useState([]);
-  const [originalMessages, setOriginalMessages] = useState([]);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [messageIdToDelete, setMessageIdToDelete] = useState(null);
-  const [sortField, setSortField] = useState("timestamp");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [filterEducationLevel, setFilterEducationLevel] = useState("all");
-  const [filterGradeLevel, setFilterGradeLevel] = useState("all");
-  const [filterSection, setFilterSection] = useState("all");
-  const [availableEducationLevels, setAvailableEducationLevels] = useState([]);
-  const [availableGradeLevels, setAvailableGradeLevels] = useState([]);
-  const [availableSections, setAvailableSections] = useState([]);
+  const [studentId, setStudentId] = useState(null);
+  const [subjectInq, setSubjectInq] = useState(null);
+  const [inquiryPage, setInquiryPage] = useState(false);
+  const [inquiryData, setInquiryData] = useState([]);
+  const [inquiries, setInquiries] = useState([]);
+  const [studentName, setStudentName] = useState(null);
 
-  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
-  const [replyMessage, setReplyMessage] = useState("");
-  const [replyTo, setReplyTo] = useState(null);
-  const [replyFiles, setReplyFiles] = useState([]);
-
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (!currentUser) return;
-
-      try {
-        const messagesRef = collection(db, "inquiries");
-        const q = query(
-          messagesRef,
-          where("recipientId", "==", currentUser.uid),
-          orderBy("timestamp", "desc")
-        );
-
-        const messagesSnapshot = await getDocs(q);
-
-        const messagesData = await Promise.all(
-          messagesSnapshot.docs.map(async (doc) => {
-            const messageData = doc.data();
-            const studentId = messageData.studentId;
-
-            const studentsRef = collection(db, "students");
-            const studentQuery = query(
-              studentsRef,
-              where("uid", "==", studentId)
-            );
-            const studentSnapshot = await getDocs(studentQuery);
-
-            let fullName = "";
-            let educationLevel = "";
-            let gradeLevel = "";
-            let section = "";
-
-            if (!studentSnapshot.empty) {
-              const studentData = studentSnapshot.docs[0].data();
-              fullName = studentData.fullName;
-              educationLevel = studentData.educationLevel;
-              gradeLevel = studentData.gradeLevel;
-              section = studentData.section;
-            }
-
-            return {
-              id: doc.id,
-              ...messageData,
-              fullName,
-              educationLevel,
-              gradeLevel,
-              section,
-            };
-          })
-        );
-
-        setMessages(messagesData);
-        setOriginalMessages(messagesData);
-
-        const uniqueEducationLevels = [
-          ...new Set(messagesData.map((msg) => msg.educationLevel)),
-        ];
-        const uniqueGradeLevels = [
-          ...new Set(messagesData.map((msg) => msg.gradeLevel)),
-        ];
-        const uniqueSections = [
-          ...new Set(messagesData.map((msg) => msg.section)),
-        ];
-
-        setAvailableEducationLevels(uniqueEducationLevels);
-        setAvailableGradeLevels(uniqueGradeLevels);
-        setAvailableSections(uniqueSections);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
+  // Update read status function
+  const markAsRead = async () => {
+    try {
+      if (!currentUser || !subjectInq) {
+        console.log("Current user or subjectInq is null");
+        return;
       }
-    };
 
-    fetchMessages();
-  }, [currentUser]);
-
-  useEffect(() => {
-    let filteredMessages = [...originalMessages];
-
-    if (filterStatus !== "all") {
-      filteredMessages = filteredMessages.filter(
-        (msg) => msg.read === (filterStatus === "read")
+      const inquiryCollectionRef = collection(db, 'inquiries');
+      const q = query(inquiryCollectionRef,
+        where('subject', '==', subjectInq),
+        where('recipientId', '==', currentUser.uid)
       );
-    }
-    if (filterEducationLevel !== "all") {
-      filteredMessages = filteredMessages.filter(
-        (msg) => msg.educationLevel === filterEducationLevel
-      );
-    }
-    if (filterGradeLevel !== "all") {
-      filteredMessages = filteredMessages.filter(
-        (msg) => msg.gradeLevel === filterGradeLevel
-      );
-    }
-    if (filterSection !== "all") {
-      filteredMessages = filteredMessages.filter(
-        (msg) => msg.section === filterSection
-      );
-    }
 
-    if (sortField) {
-      filteredMessages.sort((a, b) => {
-        const valueA = a[sortField];
-        const valueB = b[sortField];
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach(async (doc) => {
+        const docRef = doc.ref;
+        await updateDoc(docRef, {
+          read: true
+        });
+      });
+    } catch (error) {
+      console.error('Error marking inquiries as read:', error);
+    }
+  };
 
-        if (typeof valueA === "string") {
-          return sortOrder === "asc"
-            ? valueA.localeCompare(valueB)
-            : valueB.localeCompare(valueA);
+// Inbox Collection
+useEffect(() => {
+  if (!currentUser) return;
+
+  const inboxRef = collection(db, 'inquiries');
+  const q = query(inboxRef, where("fixedFacultyId", "==", currentUser.uid));
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    try {
+      const inbox = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        const date = data.timestamp ? data.timestamp.toDate() : null;
+        return { id: doc.id, ...data, date };
+      });
+
+      const subjectMap = new Map();
+      inbox.forEach((inquiry) => {
+        const key = `${inquiry.fixedStudentId}-${inquiry.subject}`;
+        if (!subjectMap.has(key)) {
+          subjectMap.set(key, inquiry);
         } else {
-          return sortOrder === "asc" ? valueA - valueB : valueB - valueA;
+          const existingInquiry = subjectMap.get(key);
+          if (existingInquiry.date < inquiry.date) {
+            subjectMap.set(key, inquiry);
+          }
         }
       });
-    }
 
-    if (searchQuery) {
-      filteredMessages = filteredMessages.filter((message) => {
-        const fullName = message.fullName
-          ? message.fullName.toLowerCase()
-          : "";
-        const messageContent = message.message
-          ? message.message.toLowerCase()
-          : "";
+      const formattedInbox = Array.from(subjectMap.values()).sort((a, b) => (b.date || 0) - (a.date || 0));
 
-        return (
-          fullName.includes(searchQuery.toLowerCase()) ||
-          messageContent.includes(searchQuery.toLowerCase())
-        );
-      });
-    }
-
-    setMessages(filteredMessages);
-  }, [
-    filterStatus,
-    searchQuery,
-    sortField,
-    sortOrder,
-    filterEducationLevel,
-    filterGradeLevel,
-    filterSection,
-    originalMessages,
-  ]);
-
-  const handleMarkAsRead = async (messageId) => {
-    try {
-      await updateDoc(doc(db, "inquiries", messageId), {
-        read: true,
-      });
-
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === messageId ? { ...msg, read: true } : msg
-        )
-      );
+      setInquiries(formattedInbox);
     } catch (error) {
-      console.error("Error marking message as read:", error);
+      console.error('Error fetching and processing inquiries:', error);
     }
-  };
+  }, (error) => {
+    console.error('Error subscribing to inbox query:', error);
+  });
 
-  const openDeleteModal = (messageId) => {
-    setMessageIdToDelete(messageId);
-    setIsDeleteModalOpen(true);
-  };
+  return () => unsubscribe();
+}, [currentUser]);
 
-  const closeDeleteModal = () => {
-    setMessageIdToDelete(null);
-    setIsDeleteModalOpen(false);
-  };
 
-  const handleDeleteMessage = async () => {
-    if (!messageIdToDelete) return;
+  
 
-    try {
-      await deleteDoc(doc(db, "inquiries", messageIdToDelete));
-
-      setMessages((prevMessages) =>
-        prevMessages.filter((msg) => msg.id !== messageIdToDelete)
-      );
-
-      closeDeleteModal();
-      alert("Message deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting message:", error);
-      alert("Error deleting message. Please try again later.");
-    }
-  };
-
-  const openReplyModal = (message) => {
-    setReplyTo(message);
-    setReplyMessage("");
-    setReplyFiles([]);
-    setIsReplyModalOpen(true);
-  };
-
-  const closeReplyModal = () => {
-    setIsReplyModalOpen(false);
-    setReplyTo(null);
-    setReplyMessage("");
-    setReplyFiles([]);
-  };
-
-  const handleReplyFileChange = (e) => {
-    setReplyFiles(Array.from(e.target.files));
-  };
-
-  const handleSendReply = async () => {
-    if (!replyTo || !replyMessage) return;
-
-    try {
-      const replyFileURLs = [];
-      if (replyFiles.length > 0) {
-        for (const file of replyFiles) {
-          const storageRef = ref(
-            storage,
-            `replies/${currentUser.uid}/${replyTo.id}/${file.name}`
-          );
-          await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(storageRef);
-          replyFileURLs.push(downloadURL);
-        }
-      }
-
-      const inquiriesRef = collection(db, "inquiries");
-      await addDoc(inquiriesRef, {
-        studentId: currentUser.uid,
-        recipientId: replyTo.studentId,
-        subject: `Re: ${replyTo.subject}`,
-        message: replyMessage,
-        fileURLs: replyFileURLs,
-        timestamp: serverTimestamp(),
-        read: false,
+  // Inquiry
+  useEffect(() => {
+    if (!currentUser) return;
+  
+    const inboxRef = collection(db, 'inquiries');
+    const q = query(inboxRef, 
+      where("fixedStudentId", "==", studentId),
+      where("subject", "==", subjectInq)
+    );
+  
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const inbox = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        const date = data.timestamp ? data.timestamp.toDate() : null;
+        return { id: doc.id, ...data, date };
       });
+  
+      inbox.sort((a, b) => (a.date || 0) - (b.date || 0));
+  
+      const formattedInbox = inbox.map((inboxes) => ({
+        ...inboxes,
+      }));
+  
+      setInquiryData(formattedInbox);
+    });
+  
+    return () => unsubscribe();
+  }, [currentUser, subjectInq]);
 
-      closeReplyModal();
-      alert("Reply sent successfully!");
-    } catch (error) {
-      console.error("Error sending reply:", error);
-      alert("Error sending reply. Please try again.");
-    }
+
+  // Inquiry Modal
+  const handleOpenModal = (subject, id, name) => {
+    setStudentId(id);
+    setStudentName(name);
+    setInquiryPage(true);
+    setSubjectInq(subject);
+    
+  }
+
+  const handleCloseModal = () => {
+    setInquiryPage(false);
+    setSubjectInq(null);
+    setStudentId(null);
+    markAsRead();
+    setInquiryData([]);
+  }
+
+  const getInitials = (email) => {
+    if (!email) return "";
+    const names = email.split("@")[0].split(/\.|_|-/);
+    return names
+      .map((n) => n[0].toUpperCase())
+      .slice(0, 2)
+      .join(""); 
   };
 
   return (
     <Sidebar>
-      <div className="container mx-auto p-4">
-        <h2 className="text-2xl font-semibold mb-4">Your Messages</h2>
-
-        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label htmlFor="filterStatus" className="block text-gray-700 mb-1">
-              Filter by Status:
-            </label>
-            <select
-              id="filterStatus"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="all">All</option>
-              <option value="read">Read</option>
-              <option value="unread">Unread</option>
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="filterEducationLevel"
-              className="block text-gray-700 mb-1"
-            >
-              Filter by Education Level:
-            </label>
-            <select
-              id="filterEducationLevel"
-              value={filterEducationLevel}
-              onChange={(e) => setFilterEducationLevel(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="all">All Education Levels</option>
-              {availableEducationLevels.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="filterGradeLevel"
-              className="block text-gray-700 mb-1"
-            >
-              Filter by Grade Level:
-            </label>
-            <select
-              id="filterGradeLevel"
-              value={filterGradeLevel}
-              onChange={(e) => setFilterGradeLevel(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="all">All Grade Levels</option>
-              {availableGradeLevels.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="filterSection"
-              className="block text-gray-700 mb-1"
-            >
-              Filter by Section:
-            </label>
-            <select
-              id="filterSection"
-              value={filterSection}
-              onChange={(e) => setFilterSection(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="all">All Sections</option>
-              {availableSections.map((section) => (
-                <option key={section} value={section}>
-                  {section}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
+        <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
+          <h2 className="text-3xl font-bold text-blue-950 text-center">Inquiries</h2>
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="searchQuery" className="block text-gray-700 mb-1">
-            Search:
-          </label>
-          <input
-            type="text"
-            id="searchQuery"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-          />
-        </div>
-
-        <div className="mb-4 flex space-x-4">
-          <div>
-            <label htmlFor="sortField" className="block text-gray-700 mb-1">
-              Sort by:
-            </label>
-            <select
-              id="sortField"
-              value={sortField}
-              onChange={(e) => setSortField(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="timestamp">Date</option>
-              <option value="fullName">Name</option>
-              <option value="educationLevel">Education Level</option>
-              <option value="gradeLevel">Grade Level</option>
-              <option value="section">Section</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="sortOrder" className="block text-gray-700 mb-1">
-              Order:
-            </label>
-            <select
-              id="sortOrder"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
-          </div>
-        </div>
-
-        {messages.length === 0 ? (
-          <p>You have no messages.</p>
-        ) : (
-          <ul className="space-y-4">
-            {messages.map((message) => (
-              <li
-                key={message.id}
-                className={`bg-white p-4 rounded-md shadow ${
-                  !message.read ? "border border-blue-500" : ""
+        <div className="p-5">
+          <div className="bg-white p-1 rounded-xl overflow-auto">
+            {inquiries.map(inquiry => (
+              <div key={inquiry.id} className="px-3">
+                <motion.div onClick={() => handleOpenModal(inquiry.subject, inquiry.fixedStudentId, inquiry.studentName)} className={`p-3 px-6 rounded-md my-3 shadow-md hover:cursor-pointer flex items-center gap-3 ${
+                  inquiry.studentId === currentUser.uid
+                    ? 'bg-[#fff6d4]'
+                    : inquiry.read
+                      ? 'bg-[#fff6d4]'
+                      : 'bg-[#bcc9fb] border-[#6176c0] border-2'
                 }`}
-                onClick={() => handleMarkAsRead(message.id)}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="font-medium">{message.fullName}</span>
-                    <p className="text-gray-600 text-sm">
-                      {message.educationLevel}, {message.gradeLevel} -{" "}
-                      {message.section}
-                    </p>
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}>
+
+                    
+                  <div className="text-xl font-bold text-blue-950">
+                    <div className="bg-blue-300 w-11 h-11 sm:w-14 sm:h-14 flex justify-center items-center rounded-full shadow-md">
+                      {getInitials(inquiry.studentName || "?")}
+                    </div>
                   </div>
-                  <span className="text-gray-500 text-sm">
-                    {moment(message.timestamp.toDate()).format(
-                      "YYYY-MM-DD HH:mm:ss"
-                    )}
-                  </span>
-                </div>
 
-                <p className="mb-4">{message.message}</p>
+                  <div className=" w-full">
+                    <div className="flex justify-between items-cente">
+                      <div className="w-[60%]">
+                        <span className="break-words font-bold sm:text-lg text-sm">
+                          {inquiry.subject}
+                        </span>
+                      </div>
 
-                {message.fileURLs && message.fileURLs.length > 0 && (
-                  <div>
-                    <p className="font-medium">Attached Files:</p>
-                    <ul className="list-disc list-inside">
-                      {message.fileURLs.map((url, index) => (
-                        <li key={index}>
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline"
-                          >
-                            File {index + 1}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
+                      <div>
+                        <span className="sm:text-sm text-xs flex">
+                          {inquiry.timestamp && moment(inquiry.timestamp.toDate()).fromNow()}
+                        </span>
+                      </div>
+
+                    </div>
+
+                    <div>
+                      <span className="text-sm text-[#000000b6]">
+                        {inquiry.facultyEmail}
+                      </span>
+                    </div>
+
+                    <div className="">
+                      <span className=" sm:text-lg text-sm">
+                        {inquiry && inquiry.fileURLs && inquiry.fileURLs.map((url, index) => (
+                            <div key={index} className='pb-2 w-fit'>
+                                    <a
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[#1d1c8b] hover:underline flex items-center"
+                                    >
+                                    <DocumentMagnifyingGlassIcon className='w-7 h-7'/>
+
+
+                                        File {index + 1}
+                                    </a>
+                            </div>
+                        ))}
+                        {inquiry.studentId === currentUser.uid ? (
+                          <>
+                            <span className="text-sm sm:text-base">
+                              You: {inquiry.message}
+                            </span>
+                          </>
+                        ) : (
+                          <div className="text-sm sm:text-base">
+                            {inquiry.message}
+                          </div>
+
+                        )}
+
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex justify-end">
+                      {inquiry.studentId === currentUser.uid ? (
+                        <span className="sm:text-sm text-xs text-[#000000b6] font-medium">
+                          {inquiry.read ? "Read" : "Unread"}
+                        </span>
+                      ) : (
+                        <>
+                        </>
+                      )}
+                    </div>
+
                   </div>
-                )}
 
-                <div className="mt-4 flex">
-                  <button
-                    onClick={() => handleMarkAsRead(message.id)}
-                    className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 mr-2"
-                  >
-                    Mark as Read
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(message.id)}
-                    className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 mr-2"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => openReplyModal(message)}
-                    className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Reply
-                  </button>
-                </div>
-              </li>
+
+                </motion.div>
+              </div>
             ))}
-          </ul>
-        )}
+            
 
-        <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal}>
-          <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-            <p>Are you sure you want to delete this message?</p>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={closeDeleteModal}
-                className="mr-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteMessage}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
           </div>
-        </Modal>
+        </div>
 
-        <Modal isOpen={isReplyModalOpen} onClose={closeReplyModal}>
-          <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Reply to Message</h3>
-            <p className="mb-2">
-              To:{" "}
-              <strong>
-                {replyTo?.fullName} ({replyTo?.studentId})
-              </strong>
-            </p>
-            <p className="mb-2">
-              Subject: <strong>Re: {replyTo?.subject}</strong>
-            </p>
-            <textarea
-              value={replyMessage}
-              onChange={(e) => setReplyMessage(e.target.value)}
-              placeholder="Type your reply here..."
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-            />
+        <AnimatePresence>
 
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Optional: Attach Files
-              </label>
-              <input
-                type="file"
-                multiple
-                onChange={handleReplyFileChange}
-                className="block w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={closeReplyModal}
-                className="mr-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+          {inquiryPage && (
+            <>
+              <ChatDesign handleClose={handleCloseModal}
+                subject={subjectInq} facultyUid={studentId} inquiryData={inquiryData} studentName={studentName} defaultStudentId={studentId} defaultFacultyId={currentUser.uid}
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendReply}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Send Reply
-              </button>
-            </div>
-          </div>
-        </Modal>
+                {inquiryData.map((inquiry) => (
+                  <div key={inquiry.id}>
+                    <UserChatDesign
+                      talkingTo={inquiry.studentName}
+                      key={inquiry.id}
+                      userType={inquiry.studentId === currentUser.uid ? "student" : "other"}
+                      data={inquiry}
+                    >
+                      {inquiry.message}
+                    </UserChatDesign>
+                  </div>
+                ))}
+              </ChatDesign>
+            </>
+          )}
+
+        </AnimatePresence>
+
+
       </div>
     </Sidebar>
   );

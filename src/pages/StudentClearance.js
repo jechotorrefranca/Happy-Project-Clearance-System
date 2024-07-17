@@ -143,8 +143,6 @@ const StudentClearance = () => {
   
       } catch (error) {
         console.error("Error fetching reject reason data:", error);
-      } finally {
-        console.log(reason)
       }
     };
   
@@ -391,6 +389,7 @@ const StudentClearance = () => {
 
 
   const setInquiryModal = (uid) => {
+    console.log(currentUser.uid);
     updateTeacherUID();
     setTeacherUid(uid);
     setInquiry(!inquiry);
@@ -503,58 +502,60 @@ const StudentClearance = () => {
 
         <div className="p-5">
           <div className="bg-white p-5 rounded-xl">
+            {/* Regular Subjects Table */}
+            {studentData?.educationLevel !== "college" && (
+              <>
           <div className="bg-gray-200 mb-4 p-5 rounded flex justify-center items-center">
                   <h2 className="text-xl font-bold text-black">Clearance</h2>
                 </div>
-            {/* Regular Subjects Table */}
-            {studentData?.educationLevel !== "college" && (
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                <tr>
-                  <th className="py-2 px-2 border border-gray-400 bg-blue-300 text-sm  sm:text-base">Subject</th>
-                  <th className="py-2 px-2 border border-gray-400 bg-blue-300 text-sm sm:text-base">
-                    Cleared
-                  </th>
-                  <th className="py-2 px-2 border border-gray-400 text-center bg-[#fff2c1] text-sm sm:text-base">Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {regularSubjects.map((subject) => (
-                  <React.Fragment key={subject}>
-                    <tr className="custom-row bg-blue-100 hover:bg-blue-200">
-                      <td
-                        className="border border-gray-400 px-4 py-2 text-sm sm:text-base" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}
-                      >
-                        {subject}
-                      </td>
-                      <td className="border border-gray-400 px-4 py-2 text-center">
-                        {studentData.clearance[subject] ? (
-                          <FontAwesomeIcon
-                            icon={faCheckCircle}
-                            className="text-green-500"
-                          />
-                        ) : (
-                          <FontAwesomeIcon
-                            icon={faTimesCircle}
-                            className="text-red-500"
-                          />
-                        )}
-                      </td>
-                      <td className="custom-cell border border-gray-400 px-4 py-2 text-center bg-[#fffcf2]">
-                        <motion.button
-                          whileHover={{scale: 1.03}}
-                          whileTap={{scale: 0.95}}
-                          className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                          onClick={() => handleSubjectClick(subject)}
-                        >
-                          View Details
-                        </motion.button>
-                      </td>
+                <table className="min-w-full bg-white border border-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="py-2 px-2 border border-gray-400 bg-blue-300 text-sm  sm:text-base">Subject</th>
+                      <th className="py-2 px-2 border border-gray-400 bg-blue-300 text-sm sm:text-base">
+                        Cleared
+                      </th>
+                      <th className="py-2 px-2 border border-gray-400 text-center bg-[#fff2c1] text-sm sm:text-base">Details</th>
                     </tr>
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {regularSubjects.map((subject) => (
+                      <React.Fragment key={subject}>
+                        <tr className="custom-row bg-blue-100 hover:bg-blue-200">
+                          <td
+                            className="border border-gray-400 px-4 py-2 text-sm sm:text-base" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}
+                          >
+                            {subject}
+                          </td>
+                          <td className="border border-gray-400 px-4 py-2 text-center">
+                            {studentData.clearance[subject] ? (
+                              <FontAwesomeIcon
+                                icon={faCheckCircle}
+                                className="text-green-500"
+                              />
+                            ) : (
+                              <FontAwesomeIcon
+                                icon={faTimesCircle}
+                                className="text-red-500"
+                              />
+                            )}
+                          </td>
+                          <td className="custom-cell border border-gray-400 px-4 py-2 text-center bg-[#fffcf2]">
+                            <motion.button
+                              whileHover={{scale: 1.03}}
+                              whileTap={{scale: 0.95}}
+                              className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                              onClick={() => handleSubjectClick(subject)}
+                            >
+                              View Details
+                            </motion.button>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </>
           )}
 
             {/* Office Requirements Table */}
@@ -1062,9 +1063,10 @@ const StudentClearance = () => {
       {inquiry && (
         <>
           {selectedSubject && (
-            <ChatDesign handleClose={() => setInquiryModal(false)} subject={selectedSubject} facultyUid={teacherUid}>
+            <ChatDesign handleClose={() => setInquiryModal(false)} subject={selectedSubject} facultyUid={teacherUid} defaultFacultyId={teacherUid} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
               {inquiryData.map((inquiry) => (
                 <UserChatDesign
+                  talkingTo={selectedSubject}
                   key={inquiry.id}
                   userType={inquiry.studentId === currentUser.uid ? "student" : "other"}
                   data={inquiry}
@@ -1076,9 +1078,10 @@ const StudentClearance = () => {
           )}
           
           {selectedSubjectOffice && (
-            <ChatDesign handleClose={() => setInquiryModal(false)} subject={selectedSubjectOffice} facultyUid={teacherUID}>
+            <ChatDesign handleClose={() => setInquiryModal(false)} subject={selectedSubjectOffice} facultyUid={teacherUID} defaultFacultyId={teacherUid} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
               {inquiryData.map((inquiry) => (
                 <UserChatDesign
+                  talkingTo={selectedSubjectOffice}
                   key={inquiry.id}
                   userType={inquiry.studentId === currentUser.uid ? "student" : "other"}
                   data={inquiry}

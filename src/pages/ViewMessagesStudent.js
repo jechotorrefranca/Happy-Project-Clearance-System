@@ -26,6 +26,33 @@ function ViewMessagesStudent() {
   const [inquiryPage, setInquiryPage] = useState(false);
   const [inquiryData, setInquiryData] = useState([]);
   const [inquiries, setInquiries] = useState([]);
+  const [studentData, setStudentData] = useState(null);
+  
+  // Fetch Student Data
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchStudentData = async () => {
+      try {
+        const studentsRef = collection(db, "students");
+        const q = query(studentsRef, where("uid", "==", currentUser.uid));
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            setStudentData(doc.data());
+          });
+        });
+
+        return () => {
+          unsubscribe();
+        };
+      } catch (error) {
+        console.error("Error fetching student data:", error);
+      }
+    };
+
+    fetchStudentData();
+  }, [currentUser, setStudentData]);
 
   // Update read status function
   const markAsRead = async () => {
@@ -248,11 +275,12 @@ function ViewMessagesStudent() {
           {inquiryPage && (
             <>
               <ChatDesign handleClose={handleCloseModal}
-                subject={subjectInq} facultyUid={facultyId} inquiryData={inquiryData} // Pass inquiryData as a prop
+                subject={subjectInq} facultyUid={facultyId} inquiryData={inquiryData} studentName={studentData.fullName} defaultStudentId={currentUser.uid} defaultFacultyId={facultyId}
               >
                 {inquiryData.map((inquiry) => (
                   <div key={inquiry.id}>
                     <UserChatDesign
+                      talkingTo={subjectInq}
                       key={inquiry.id}
                       userType={inquiry.studentId === currentUser.uid ? "student" : "other"}
                       data={inquiry}

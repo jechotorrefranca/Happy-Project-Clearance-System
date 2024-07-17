@@ -4,12 +4,21 @@ import {
     DocumentMagnifyingGlassIcon
   } from "@heroicons/react/24/solid";
 
-const UserChatDesign = ({userType, children, data}) => {
+const UserChatDesign = ({userType, children, data, talkingTo}) => {
     const [type, setType] = useState(null);
 
     useEffect(() => {
         setType(userType === 'student');
     }, [userType]);
+
+    const getInitials = (email) => {
+        if (!email) return "";
+        const names = email.split("@")[0].split(/\.|_|-/);
+        return names
+          .map((n) => n[0].toUpperCase())
+          .slice(0, 2)
+          .join(""); 
+      };
 
     return (
         <>
@@ -45,16 +54,16 @@ const UserChatDesign = ({userType, children, data}) => {
                 <>
 
                 <div className=' ml-3 '>
-                    <div className='ml-14'>
+                    <div className='ml-14 text-sm text-gray-500'>
                         
                         <span>
-                            {data.facultyEmail}
+                            {talkingTo}
                         </span>
                     </div>
 
                     <div className='flex gap-3 py-1'>
                         <div className='w-10 h-10 rounded-full flex justify-center items-center bg-[#ffeca4] text-xl font-semibold text-[#494124]'>
-                            AS
+                            {getInitials(talkingTo) || "?"}
                         </div>
                         <div className='bg-[#ffeca4] max-w-[60%] sm:max-w-[60%] rounded-2xl justify-start items-center flex p-2 px-3'>
                                 <div className='word-wrap w-full'>

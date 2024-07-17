@@ -19,11 +19,10 @@ import { ToastContainer, toast, Bounce } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
-const ChatDesign = ({ handleClose, children, subject, facultyUid }) => {
+const ChatDesign = ({ handleClose, children, subject, facultyUid, studentName, defaultStudentId, defaultFacultyId }) => {
     const { currentUser } = useAuth();
     const [message, setMessage] = useState('');
     const [inquiryFiles, setInquiryFiles] = useState([]);
-    const [studentData, setStudentData] = useState(null);
 
     const showSuccessToast = (msg) => toast.success(msg, {
       position: "top-center",
@@ -47,34 +46,7 @@ const ChatDesign = ({ handleClose, children, subject, facultyUid }) => {
         progress: undefined,
         theme: "colored",
         transition: Bounce,
-        });
-
-  // Fetch Student Data
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const fetchStudentData = async () => {
-      try {
-        const studentsRef = collection(db, "students");
-        const q = query(studentsRef, where("uid", "==", currentUser.uid));
-
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            setStudentData(doc.data());
-          });
-        });
-
-        return () => {
-          unsubscribe();
-        };
-      } catch (error) {
-        console.error("Error fetching student data:", error);
-      }
-    };
-
-    fetchStudentData();
-  }, [currentUser, setStudentData]);
-  
+        });  
 
 
     const handleInquiryFileChange = (e) => {
@@ -104,13 +76,15 @@ const ChatDesign = ({ handleClose, children, subject, facultyUid }) => {
             fileURLs: inquiryFileURLs,
             timestamp: serverTimestamp(),
             read: false,
-            fixedStudentId: currentUser.uid,
-            fixedFacultyId: facultyUid,
-            studentName: studentData.fullName,
+            fixedStudentId: defaultStudentId,
+            fixedFacultyId: defaultFacultyId,
+            studentName: studentName,
           });
           setInquiryFiles([]);
           setMessage("");
         } catch (error) {
+          console.log('fixedStudentId:', defaultStudentId); // Add this line to check the value
+
           console.error("Error sending inquiry:", error);
           showFailedToast("Error sending inquiry. Please try again later");
         }
