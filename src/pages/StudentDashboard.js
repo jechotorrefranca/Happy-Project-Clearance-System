@@ -39,7 +39,7 @@ const StudentDashboard = () => {
   const [greetings, setGreetings] = useState(null);
   const [loading, setLoading] = useState(false);
   const componentRef = useRef(null);
-  const [hidden, setHidden] = useState(false);
+  const [hidden, setHidden] = useState(true);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [notcomplete, setNotcomplete] = useState(false);
   
@@ -363,8 +363,13 @@ const StudentDashboard = () => {
         <>
           {/* PDF Generate Page */}
           <div className="print-container px-20 pb-20 pt-10 text-xs" ref={componentRef}>
-            <div className="flex justify-center pb-5">
+            <div className="flex justify-center pb-5 items-center gap-3 font-medium">
               <img src="/DYCI.png" className="w-16 h-16"/>
+              <div className="mb-3">
+                <p>Dr. Yanga's Colleges, Inc.</p>
+                <p>Wakas, Bocaue, Bulacan</p>
+
+              </div>
             </div>
             <div className="text-base pb-5">
               <div className="flex print-layout justify-between">
