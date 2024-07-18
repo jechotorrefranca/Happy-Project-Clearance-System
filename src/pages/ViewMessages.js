@@ -164,11 +164,11 @@ function ViewMessages() {
     // Status
     if (filterStatus === 'read') {
       filteredMessages = filteredMessages.filter(inquiry =>
-        inquiry.recipientId === currentUser.uid && inquiry.read
+        inquiry.fixedFacultyId === currentUser.uid && inquiry.read
       );
     } else if (filterStatus === 'unread') {
       filteredMessages = filteredMessages.filter(inquiry =>
-        inquiry.recipientId === currentUser.uid && !inquiry.read
+        inquiry.fixedFacultyId === currentUser.uid && !inquiry.read
       );
     }
 
