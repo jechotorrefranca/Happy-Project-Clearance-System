@@ -318,6 +318,22 @@ function DisciplinaryRecords() {
   const [selectedViolations, setSelectedViolations] = useState([]);
   const [selectedSanctions, setSelectedSanctions] = useState([]);
 
+  const [offenseOptions, setOffenseOptions] = useState([]);
+  const [selectedOffense, setSelectedOffense] = useState(null);
+
+  useEffect(() => {
+    const allOffenses = Object.values(VIOLATIONS).flatMap((violationGroup) =>
+      violationGroup.map((violation) => ({
+        value: violation.value,
+        label: violation.value,
+      }))
+    );
+    setOffenseOptions([
+      { value: "all", label: "All Offenses" },
+      ...allOffenses,
+    ]);
+  }, []);
+
   useEffect(() => {
     const fetchStudentsAndTeachers = async () => {
       try {
@@ -536,8 +552,8 @@ function DisciplinaryRecords() {
     }
   };
 
-  const handleOffenseFilterChange = (e) => {
-    setFilterOffense(e.target.value);
+  const handleOffenseFilterChange = (selectedOption) => {
+    setSelectedOffense(selectedOption);
   };
 
   const handleSearchQueryChange = (e) => {
@@ -546,10 +562,17 @@ function DisciplinaryRecords() {
 
   const filteredRecords = originalRecords.filter((record) => {
     const offenseMatch =
-      filterOffense === "all" || record.offense === filterOffense;
+      !selectedOffense ||
+      selectedOffense.value === "all" ||
+      record.violations.some(
+        (violation) => violation === selectedOffense.value
+      );
+
     const searchMatch =
-      record.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.studentId.toLowerCase().includes(searchQuery.toLowerCase());
+      record.studentFullName
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      record.studentNo.toLowerCase().includes(searchQuery.toLowerCase());
 
     return offenseMatch && searchMatch;
   });
@@ -596,29 +619,41 @@ function DisciplinaryRecords() {
         </div>
 
         <div className="p-5">
-          <div className="bg-white p-5 rounded-xl overflow-auto">
+          <div className="bg-white p-5 rounded-xl">
 
             <div className="mb-4 sm:flex gap-4 justify-around">
 
               <div className="sm:flex gap-4 w-full">
 
                 <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
-                  <label htmlFor="filterOffense" className="block text-gray-700 mb-1">
-                    Filter by Offense:
-                  </label>
-                  <select
-                    id="filterOffense"
-                    value={filterOffense}
-                    onChange={handleOffenseFilterChange}
-                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-                  >
-                    <option value="all">All Offenses</option>
-                    {availableOffenses.map((offense) => (
-                      <option key={offense} value={offense}>
-                        {offense}
-                      </option>
-                    ))}
-                  </select>
+                <label htmlFor="offenseFilter" className="block text-gray-700 mb-1">
+                  Filter by Offense:
+                </label>
+                <Select
+                  id="offenseFilter"
+                  options={offenseOptions}
+                  value={selectedOffense}
+                  onChange={setSelectedOffense}
+                  isClearable
+                  isSearchable
+                  placeholder="Select or search for an offense"
+                  className="basic-single"
+                  classNamePrefix="select"
+                  styles={{
+                    control: (provided) => ({
+                      ...provided,
+                      minWidth: "200px",
+                    }),
+                    menu: (provided) => ({
+                      ...provided,
+                      minWidth: "200px",
+                    }),
+                    container: (provided) => ({
+                      ...provided,
+                      width: "100%",
+                    }),
+                  }}
+                />
                 </div>
 
                 <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
@@ -685,7 +720,7 @@ function DisciplinaryRecords() {
                     <React.Fragment key={record.id}>
                       <tr
                         onClick={() => handleExpandRow(record.id)}
-                        className="cursor-pointer hover:bg-[#fff1f1] transition duration-150 ease-in-out"
+                        className="cursor-pointer bg-red-50 hover:bg-red-100 transition duration-150 ease-in-out"
                       >
                         <td className="border-t border-gray-300 px-4 py-3">
                           {record.studentNo}
@@ -720,39 +755,42 @@ function DisciplinaryRecords() {
                       </tr>
 
                       {expandedRecordId === record.id && (
-                        <tr className="bg-red-50">
+                        <tr className="bg-red-100">
                           <td
                             colSpan={8}
                             className="border-t border-gray-300 px-4 py-3"
                           >
-                            <div className="mb-3">
-                              <label className="block text-gray-600 text-sm font-semibold">
-                                Location:
-                              </label>
-                              <p>{record.location || "N/A"}</p>
-                            </div>
-                            <div className="mb-3">
-                              <label className="block text-gray-600 text-sm font-semibold">
-                                Witnesses:
-                              </label>
-                              <p>{record.witnessNames}</p>
-                            </div>
-                            <div>
-                              <label className="block text-gray-600 text-sm font-semibold">
-                                Evidence:
-                              </label>
-                              {record.evidenceURL ? (
-                                <a
-                                  href={record.evidenceURL}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-500 hover:underline"
-                                >
-                                  View Evidence
-                                </a>
-                              ) : (
-                                "No Evidence"
-                              )}
+                            <div className="p-3">
+
+                              <div className="mb-3">
+                                <label className="block text-gray-600 text-sm font-semibold">
+                                  Location:
+                                </label>
+                                <p>{record.location || "N/A"}</p>
+                              </div>
+                              <div className="mb-3">
+                                <label className="block text-gray-600 text-sm font-semibold">
+                                  Witnesses:
+                                </label>
+                                <p>{record.witnessNames}</p>
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 text-sm font-semibold">
+                                  Evidence:
+                                </label>
+                                {record.evidenceURL ? (
+                                  <a
+                                    href={record.evidenceURL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500 hover:underline"
+                                  >
+                                    View Evidence
+                                  </a>
+                                ) : (
+                                  "No Evidence"
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -909,9 +947,8 @@ function DisciplinaryRecords() {
                 </motion.button>
 
                 <motion.button
-                whileHover={{scale: 1.03}}
-                whileTap={{scale: 0.95}}
-                
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
                 >
