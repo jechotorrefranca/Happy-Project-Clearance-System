@@ -43,7 +43,8 @@ function ViewMessages() {
       const inquiryCollectionRef = collection(db, 'inquiries');
       const q = query(inquiryCollectionRef,
         where('subject', '==', subjectInq),
-        where('recipientId', '==', currentUser.uid)
+        where('recipientId', '==', currentUser.uid),
+        where('fixedStudentId', '==', studentId),
       );
 
       const querySnapshot = await getDocs(q);
