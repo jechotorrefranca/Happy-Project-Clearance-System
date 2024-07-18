@@ -104,7 +104,7 @@ const router = createBrowserRouter([
   },
   { 
     path: "/view-messages", 
-    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'faculty', 'Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
+    element: <RoleBasedRoute allowedRoles={['admin', 'super-admin', 'faculty', 'Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS', 'Librarian']}>
       <ViewMessages />
     </RoleBasedRoute> 
   },
@@ -164,13 +164,13 @@ const router = createBrowserRouter([
   },
   { 
     path: "/approve-clearance-office", 
-    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
+    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS', 'Librarian']}>
       <ApproveClearanceOffice />
     </RoleBasedRoute> 
   },
   { 
     path: "/manage-office-requirements", 
-    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
+    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS', 'Librarian']}>
       <ManageOfficeRequirements />
     </RoleBasedRoute> 
   },
@@ -242,7 +242,7 @@ const router = createBrowserRouter([
   },
   { 
     path: "/office-clearance-manual", 
-    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS']}>
+    element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS', 'Librarian']}>
       <OfficeClearanceManual />
     </RoleBasedRoute> 
   }
