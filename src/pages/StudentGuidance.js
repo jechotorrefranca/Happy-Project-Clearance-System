@@ -112,6 +112,12 @@ const StudentGuidance = () => {
     };
 
     const handleSelectSlot = useCallback((slotInfo) => {
+
+        if (isWeekend(slotInfo.start) || isDisabledDate(slotInfo.start)) {
+            console.log('Selected slot is not available; no action taken.');
+            return;
+        }
+
         if ((view === Views.WEEK || view === Views.DAY) && isOutsideAllowedTime(slotInfo.start, slotInfo.end || new Date(slotInfo.start.getTime() + 60 * 60 * 1000))) {
             console.log('Selected slot is not available; no action taken.');
             return;
