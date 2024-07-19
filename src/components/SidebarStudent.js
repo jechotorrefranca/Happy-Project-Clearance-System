@@ -10,13 +10,14 @@ import {
   DocumentCheckIcon,
   ClipboardDocumentListIcon,
   BellIcon,
-  InboxIcon,
-  LockClosedIcon
+  LockClosedIcon,
+  UserGroupIcon,
+  EnvelopeOpenIcon
 } from "@heroicons/react/24/outline";
 
 import {
   BellAlertIcon,
-  InboxStackIcon
+  EnvelopeIcon
 } from "@heroicons/react/24/solid";
 
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
@@ -39,8 +40,9 @@ const db = getFirestore();
 const initialNavigation = [
   { name: "Dashboard", href: "/studentdashboard", icon: HomeIcon, current: false },
   { name: "Clearance", href: "/student-clearance", icon: DocumentCheckIcon, current: false},
+  { name: "Guidance Counseling", href: "/student-guidance", icon: UserGroupIcon, current: false},
   { name: "Notification", href: "/notifications", icon: BellIcon, current: false},
-  { name: "Messages", href: "/view-messages-student", icon: InboxIcon, current: false },
+  { name: "Messages", href: "/view-messages-student", icon: EnvelopeOpenIcon, current: false },
   { name: "Activity Log", href: "/activitylog", icon: ClipboardDocumentListIcon, current: false },
   { name: "Change Password", href: "/changepassword", icon: LockClosedIcon, current: false, children: [] },
 ];
@@ -150,6 +152,7 @@ useEffect(() => {
       }
     });
   }, [userRole]);
+  
 
   useEffect(() => {
     const updatedNavigation = initialNavigation.map((item) => {
@@ -162,7 +165,7 @@ useEffect(() => {
       } else if (item.name === "Messages") {
         return {
           ...item,
-          icon: messages.length > 0 ? InboxStackIcon : InboxIcon,
+          icon: messages.length > 0 ? EnvelopeIcon : EnvelopeOpenIcon,
           current: item.href === location.pathname,
         };
       } else {
@@ -293,7 +296,7 @@ useEffect(() => {
                                           className={classNames(
                                             item.current
                                               ? "text-[#494124]"
-                                              : "text-gray-400 group-hover:text-[#494124]",
+                                              : "text-gray-500 group-hover:text-[#494124]",
                                             "h-6 w-6 shrink-0"
                                           )}
                                           aria-hidden="true"
@@ -329,7 +332,10 @@ useEffect(() => {
                     <ul className="flex flex-1 flex-col gap-y-7">
                       <li>
                         <ul className="-mx-2 space-y-1">
-                          {navigation.map((item) => (
+                        {navigation.map((item) => {
+                          const iconClass = item.icon === EnvelopeIcon ? 'text-red-400' : (item.current ? 'text-[#494124]' : 'text-gray-400 group-hover:text-[#494124]');
+
+                          return (
                             <li key={item.name}>
                               <a
                                 href={item.href}
@@ -342,9 +348,7 @@ useEffect(() => {
                               >
                                 <item.icon
                                   className={classNames(
-                                    item.current
-                                      ? "text-[#494124]"
-                                      : "text-gray-400 group-hover:text-[#494124]",
+                                    iconClass,
                                     "h-6 w-6 shrink-0"
                                   )}
                                   aria-hidden="true"
@@ -352,7 +356,9 @@ useEffect(() => {
                                 {item.name}
                               </a>
                             </li>
-                          ))}
+                          );
+                        })}
+
                         </ul>
                       </li>
                       <li className="-mx-6 mt-auto">
@@ -434,9 +440,9 @@ useEffect(() => {
                   
                   className="flex items-center rounded-full p-1 text-sm font-semibold text-gray-800">
                     {messages.length > 0 ? (
-                      <InboxStackIcon className="h-6 w-6 text-red-400" />
+                      <EnvelopeIcon className="h-6 w-6 text-red-400" />
                     ) : (
-                      <InboxIcon className="h-6 w-6" />
+                      <EnvelopeOpenIcon className="h-6 w-6" />
                     )}
                 </motion.div>
               </a>

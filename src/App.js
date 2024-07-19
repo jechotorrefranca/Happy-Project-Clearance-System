@@ -40,6 +40,7 @@ import ActivityLog from "./pages/ActivityLog";
 import Notification from "./pages/Notifications";
 import StudentDashboard from "./pages/StudentDashboard";
 import ChangePassword from "./pages/ChangePassword";
+import StudentGuidance from "./pages/StudentGuidance";
 
 
 const router = createBrowserRouter([
@@ -130,6 +131,12 @@ const router = createBrowserRouter([
     path: "/student-clearance", 
     element: <RoleBasedRoute allowedRoles={['student']}>
       <StudentClearance />
+    </RoleBasedRoute> 
+  },
+  { 
+    path: "/student-guidance", 
+    element: <RoleBasedRoute allowedRoles={['student']}>
+      <StudentGuidance />
     </RoleBasedRoute> 
   },
   { 

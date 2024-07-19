@@ -1,0 +1,19 @@
+/* Apply pointer cursor to all calendar cells */
+.rbc-day-bg, 
+.rbc-month-view .rbc-day-bg, 
+.rbc-time-slot, 
+.rbc-agenda-cell, 
+.rbc-row,
+.rbc-time-slot > div, 
+.rbc-time-content, 
+.rbc-time-column {
+  cursor: pointer;
+}
+
+/* Add hover effect */
+.rbc-day-bg:hover, 
+.rbc-month-view .rbc-day-bg:hover, 
+.rbc-time-slot:hover, 
+.rbc-agenda-cell:hover {
+  background-color: #e0e0e0; /* Gray background color on hover */
+}

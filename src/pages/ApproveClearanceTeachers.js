@@ -375,7 +375,7 @@ function ApproveClearanceTeachers() {
                           <td className="border border-gray-400 px-4 py-2">{request.subject}</td>
                           <td className="border border-gray-400 px-4 py-2">{request.section}</td>
                           <td className="border border-gray-400 px-4 py-2">{request.status}</td>
-                          <td className="border border-gray-400 px-4 py-2">{request.disciplinaryRecords.length}</td>
+                          <td className="border border-gray-400 px-4 py-2 text-center">{request.disciplinaryRecords.length}</td>
                           <td className="border border-gray-400 px-4 py-2">
                             {request.fileURLs && request.fileURLs.length > 0 ? (
                               <ul>
