@@ -101,7 +101,7 @@ const StudentGuidance = () => {
             return {
                 style: {
                     backgroundColor: 'lightgray',
-                    color: 'white',
+                    color: 'black',
                     opacity: 0.7,
                     pointerEvents: 'none',
                 },
@@ -112,33 +112,45 @@ const StudentGuidance = () => {
     };
 
     const handleSelectSlot = useCallback((slotInfo) => {
-
+        // hiwalay tong dalawa
         if (isWeekend(slotInfo.start) || isDisabledDate(slotInfo.start)) {
             console.log('Selected slot is not available; no action taken.');
             return;
         }
-
-        if ((view === Views.WEEK || view === Views.DAY) && isOutsideAllowedTime(slotInfo.start, slotInfo.end || new Date(slotInfo.start.getTime() + 60 * 60 * 1000))) {
-            console.log('Selected slot is not available; no action taken.');
+    
+        // Check if outside time
+        if ((view === Views.DAY) && isOutsideAllowedTime(slotInfo.start, slotInfo.end || new Date(slotInfo.start.getTime() + 60 * 60 * 1000))) {
+            console.log('Selected slot is outside allowed time; no action taken.');
             return;
         }
-
+    
         console.log('Selected Date:', slotInfo.start);
         setDate(slotInfo.start);
-
+    
+        // Can go in view mode if views.month
         if (view === Views.MONTH) {
             setView(Views.DAY);
         }
+    
+        // add 30 min for max time counseling
+        const add30Minutes = (date) => {
+            return new Date(date.getTime() + 30 * 60 * 1000);
+        };
 
-        if (!isOutsideAllowedTime(slotInfo.start, slotInfo.end || new Date(slotInfo.start.getTime() + 60 * 60 * 1000))) {
+        if (!isOutsideAllowedTime(slotInfo.start, add30Minutes(slotInfo.start))) {
             setTemporaryEvent({
                 title: 'Schedule Counseling: Insert name',
                 start: slotInfo.start,
-                end: slotInfo.end || new Date(slotInfo.start.getTime() + 60 * 60 * 1000),
+                end: add30Minutes(slotInfo.start),
                 status: 'display'
             });
+
+            console.log('temp')
+        } else {
+            setTemporaryEvent(null);
         }
     }, [view, disabledDates]);
+    
 
     const handleSelectEvent = useCallback((event) => {
         console.log('Clicked Event:', event);
@@ -203,7 +215,7 @@ const StudentGuidance = () => {
                                 eventPropGetter={eventStyleGetter}
                                 dayPropGetter={dayPropGetter}
                                 style={{ height: '100%' }}
-                                views={['month', 'week', 'day']}
+                                views={['month', 'day']}
                                 selectable
                                 onSelectSlot={handleSelectSlot}
                                 onSelectEvent={handleSelectEvent}
@@ -218,6 +230,12 @@ const StudentGuidance = () => {
                                 }}
                                 slotPropGetter={slotPropGetter}
                             />
+                        </div>
+
+                        <div>
+                            {/* button to navigate to views.day
+                                select a time
+                            */}
                         </div>
                     </div>
                 </div>
