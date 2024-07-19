@@ -272,11 +272,11 @@ const StudentGuidance = () => {
                         <div className='p-1 mb-4 flex items-stretch justify-around sm:text-base text-sm gap-2'>
 
                             <div className='w-full flex-1'>
-                                <span className='font-semibold flex justify-center'>
+                                <span className='font-semibold flex justify-center mb-2 text-blue-900'>
                                     Disabled Dates
                                 </span>
 
-                                <div className='h-[85%] flex flex-col gap-1 bg-blue-50 px-5 p-3 rounded'>
+                                <div className='h-[85%] flex flex-col gap-1 bg-blue-50 px-5 p-3 rounded justify-center'>
                                     <div className='flex gap-4 items-center'>
                                         <div className='bg-gray-400 rounded-full w-2 h-2'/>
                                         <span>Weekends</span>
@@ -291,7 +291,7 @@ const StudentGuidance = () => {
                             </div>
 
                             <div className='w-full flex-1'>
-                                <span className='font-semibold flex justify-center'>
+                                <span className='font-semibold flex justify-center mb-2 text-blue-900'>
                                     Schedule Status
                                 </span>
                                 <div className='h-[85%] flex flex-col gap-1 bg-blue-50 px-5 p-3 rounded'>
