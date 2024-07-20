@@ -1,11 +1,14 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { collection, query, where, getDocs, startAfter } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp, } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { useAuth } from "../components/AuthContext";
 import SidebarStudent from '../components/SidebarStudent';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarStyles.css';
+import Modal from '../components/Modal';
+import { motion } from 'framer-motion';
 
 const localizer = momentLocalizer(moment);
 
@@ -38,7 +41,8 @@ const eventStyleGetter = (event) => {
         opacity: 0.8,
         color: 'black',
         display: 'flex',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        fontSize: '13px',
     };
     return {
         style,
@@ -46,35 +50,105 @@ const eventStyleGetter = (event) => {
 };
 
 const StudentGuidance = () => {
+    const { currentUser } = useAuth();
     const [view, setView] = useState(Views.MONTH);
     const [date, setDate] = useState(new Date());
     const [temporaryEvent, setTemporaryEvent] = useState(null);
     const [counselors, setCounselors] = useState([]);
+    const [counselorSched, setCounselorSched] = useState([]);
+    const [selectedCounselor, setSelectedCounselor] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
+    const [studentData, setStudentData] = useState(null);
+    const [submitModal, setSubmitModal] = useState(false);
+    const [reason, setReason] = useState("");
 
+    // Fetch Student Data
     useEffect(() => {
-      const fetchCounselors = async () => {
+      if (!currentUser) return;
+  
+      const fetchStudentData = async () => {
         try {
-          const usersCollection = collection(db, 'users');
-          const q = query(usersCollection, where('role', '==', 'Guidance Office'));
-          const querySnapshot = await getDocs(q);
-          
-          const usersList = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          
-          setCounselors(usersList);
+          const studentsRef = collection(db, "students");
+          const q = query(studentsRef, where("uid", "==", currentUser.uid));
+  
+          const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+              setStudentData(doc.data());
+            });
+          });
+  
+          return () => {
+            unsubscribe();
+          };
         } catch (error) {
-          console.error("Error fetching users: ", error);
+          console.error("Error fetching student data:", error);
         }
       };
   
-      fetchCounselors();
-    }, []);
+      fetchStudentData();
+    }, [currentUser, setStudentData]);
+
+    useEffect(() => {
+        const fetchCounselors = async () => {
+            if (!studentData) return;
+    
+            try {
+                const usersCollection = collection(db, 'users');
+                let q = query(usersCollection, where('role', '==', 'Guidance Office'));
+                
+                if (studentData.educationLevel === 'elementary') {
+                    q = query(q, where('educationLevel', '==', 'elementary'));
+                } else if (studentData.educationLevel === 'junior high school' || studentData.educationalLevel === 'senior high school') {
+                    q = query(q, where('educationLevel', 'in', ['junior high school', 'senior high school']));
+                } else if (studentData.educationLevel === 'college') {
+                    q = query(q, where('educationLevel', '==', 'college'));
+                }
+    
+                const querySnapshot = await getDocs(q);
+                
+                const usersList = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                setCounselors(usersList);
+            } catch (error) {
+                console.error("Error fetching users: ", error);
+            }
+        };
+    
+        fetchCounselors();
+    }, [studentData]);
+    
+
+    useEffect(() => {
+        if (!selectedCounselor) {
+            setCounselorSched([]);
+            return;
+        }
+    
+        const usersCollection = collection(db, 'guidanceAppointments');
+        const q = query(usersCollection, where('counselorId', '==', selectedCounselor.uid));
+        
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const counselorSched = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            setCounselorSched(counselorSched);
+        }, (error) => {
+            console.error("Error fetching schedule: ", error);
+        });
+    
+        return () => unsubscribe();
+    }, [selectedCounselor?.uid]);
+    
+    
 
     const disabledDates = [
+        // replace with data in firebase
         new Date(2024, 6, 22),
         new Date(2024, 6, 24),
     ];
@@ -146,12 +220,15 @@ const StudentGuidance = () => {
         const isPastTime = slotInfo.start < new Date();
     
         if (isWeekend(slotInfo.start) || isDisabledDate(slotInfo.start)) {
-            console.log("Cannont schedule on weekends");
+            console.log("Cannot schedule on weekends");
             return;
         }
     
         if ((view === Views.DAY) && isOutsideAllowedTime(slotInfo.start, slotInfo.end || new Date(slotInfo.start.getTime() + 60 * 60 * 1000))) {
             console.log("The selected slot is outside of permissible hours; no action will be taken.");
+            setStartTime(null);
+            setEndTime(null);
+            setTemporaryEvent(null);
             return;
         }
 
@@ -162,6 +239,9 @@ const StudentGuidance = () => {
     
         if (isToday && isPastTime) {
             console.log("Cannot schedule for a past time today.");
+            setStartTime(null);
+            setEndTime(null);
+            setTemporaryEvent(null);
             return;
         }
     
@@ -176,11 +256,9 @@ const StudentGuidance = () => {
             return new Date(date.getTime() + 30 * 60 * 1000);
         };
 
-
-    
         if (!isOutsideAllowedTime(slotInfo.start, add30Minutes(slotInfo.start))) {
             setTemporaryEvent({
-                title: 'Schedule Counseling: Insert name',
+                title: '- You',
                 start: slotInfo.start,
                 end: add30Minutes(slotInfo.start),
                 status: 'display'
@@ -188,66 +266,84 @@ const StudentGuidance = () => {
 
             setStartTime(slotInfo.start);
             setEndTime(add30Minutes(slotInfo.start));
-
-
     
-            console.log("Temporary event created.");
+            console.log("Temporary event created1.");
         } else {
             setTemporaryEvent(null);
+
         }
     }, [view, disabledDates]);
     
-    
-
     const handleSelectEvent = useCallback((event) => {
+        if (event.status === 'display') {
+            setTemporaryEvent(null);
+            setStartTime(null);
+            setEndTime(null);
+            return;
+        }
         console.log('Clicked Event:', event);
         setDate(event.start);
         setView(Views.DAY);
-        setTemporaryEvent(null);
+
     }, []);
+    
 
     const events = [
+        ...counselorSched.map(appointment => ({
+            title: appointment.studentId === currentUser.uid 
+                ? (view === Views.MONTH ? "You" : "- You") 
+                : "- Anonymous",
+            start: appointment.start.toDate(),
+            end: appointment.end.toDate(),
+            status: appointment.status
+        })),
         {
-            title: 'Team Meeting',
+            title: 'Anonymous',
             start: new Date(2024, 6, 29, 9, 0),
             end: new Date(2024, 6, 29, 10, 0),
             status: 'pending'
         },
         {
-            title: 'Project Presentation',
+            title: 'Anonymous',
             start: new Date(2024, 6, 23, 11, 0),
             end: new Date(2024, 6, 23, 12, 0),
             status: 'finished'
         },
         {
-            title: 'Lunch with Client',
+            title: 'Anonymous',
             start: new Date(2024, 6, 17, 13, 0),
             end: new Date(2024, 6, 17, 14, 0),
             status: 'rescheduled'
         },
         {
-            title: 'Workshop',
+            title: 'Anonymous',
             start: new Date(2024, 6, 25, 15, 0),
             end: new Date(2024, 6, 25, 17, 0),
             status: 'did not respond'
         },
         {
-            title: 'Team Building Activity',
+            title: 'Anonymous',
             start: new Date(2024, 6, 26, 10, 0),
             end: new Date(2024, 6, 26, 12, 0),
             status: 'approved'
         },
         temporaryEvent,
     ].filter(event => event);
+    
 
     const handleGotoDay = () => {
-        console.log("start: ", startTime)
-        console.log("end: ", endTime)
+        console.log("start: ", startTime);
+        console.log("end: ", endTime);
 
         const today = new Date();
     
-        if (isWeekend(today) || isDisabledDate(today)) {
-            console.log("Can't schedule on weekends");
+        if (isWeekend(today)) {
+            console.log("Scheduling is not available on weekends. Please select alternative dates");
+            return;
+        }
+
+        if (isDisabledDate(today)) {
+            console.log("Counselor not available. Please select alternative dates");
             return;
         }
 
@@ -259,7 +355,60 @@ const StudentGuidance = () => {
         setView(Views.DAY);
         setDate(today);
     };
+
+    const handleCounselorChange = (e) => {
+        const counselorId = e.target.value;
+        const selected = counselors.find(counselor => counselor.id === counselorId);
+        setSelectedCounselor(selected);
+    };
+
+    const handleSubmitSchedule = async () => {
+        try {
+          await addDoc(collection(db, 'guidanceAppointments'), {
+            start: new Date(startTime),
+            end: new Date(endTime),
+            reason: "reason",
+            counselorName: selectedCounselor.counselorName,
+            status: "pending",
+            studentId: currentUser.uid,
+            counselorId: selectedCounselor.uid,
+            section: studentData.section,
+            department: studentData.department,
+            gradeLevel: studentData.gradeLevel,
+            fullName: studentData.fullName,
+            studentEmail: studentData.email,
+            reason: reason,
+            timestamp: serverTimestamp(),
+          });
+          console.log("Schedule submitted successfully.");
+
+          // Add to activityLog collection
+          const activityLogRef = collection(db, "activityLog");
+          await addDoc(activityLogRef, {
+              date: serverTimestamp(),
+              subject: selectedCounselor.counselorName,
+              type: 'counseling',
+              studentId: currentUser.uid
+          });
+
+          setTemporaryEvent(null);
+          setStartTime(null);
+          setEndTime(null);
+          setSelectedCounselor(null);
+          setReason('');
+          setSubmitModal(false);
+
+        } catch (error) {
+          console.error("Error submitting schedule:", error);
+        }
+      };
     
+    const handleSubmitModal = () => {
+        setSubmitModal(prevState => !prevState);
+    }
+    
+      
+
     return (
         <SidebarStudent>
             <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
@@ -355,41 +504,151 @@ const StudentGuidance = () => {
                             />
                         </div>
 
+                        <div className="w-full bg-blue-100 p-5 rounded my-4">
+                            <label htmlFor="filterCounselor" className="block text-gray-700 mb-1">
+                                Choose Counselor: 
+                            </label>
+                            <select
+                                id="filterCounselor"
+                                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                                value={selectedCounselor ? selectedCounselor.id : ''}
+                                onChange={handleCounselorChange}
+                            >
+                                <option value="">Select a counselor</option>
+                                {counselors.map(counselor => (
+                                    <option key={counselor.id} value={counselor.id}>
+                                        {counselor.counselorName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
                         <div className='mt-4'>
                             {view === Views.DAY ? (
                                 <>
-                                    <div className='flex justify-center'>
-                                        options here for counselor
-                                    </div>
-
-                                    {(startTime && endTime) ?(
-                                        <div>
-                                            you selected a date yay
-                                        </div>
-                                        
-                                    ):(
-
-                                        <div className='flex justify-center'>
-                                            <span>Hold and Drag Down to Select Time </span>
+                                    {!selectedCounselor &&(
+                                        <div className='flex justify-center text-gray-500 font-semibold'>
+                                            <span>Select a counselor to view available schedules</span>
                                         </div>
                                     )}
 
+                                    {(startTime && endTime) && selectedCounselor ? (
+                                        <div>
+                                            <motion.button
+                                             whileHover={{scale: 1.03}}
+                                             whileTap={{scale: 0.95}}
+                                             className='w-full p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleSubmitModal}>
+                                                Set schedule
+                                            </motion.button>
+                                        </div>
+                                        
+                                    ) : (
+                                        <>
+                                        {!temporaryEvent &&(
+                                            <div className='flex justify-center text-gray-500 font-semibold'>
+                                                <span>Hold and Drag Down to Select Time </span>
+                                            </div>
+
+                                        )}
+
+
+                                        </>
+                                    )}
                                 
                                 </>
 
-                            ):(
+                            ) : (
+                                <>
+                                    {!selectedCounselor &&(
+                                        <div className='flex justify-center text-gray-500 font-semibold mb-4'>
+                                            <span>Select a counselor to view available schedules</span>
+                                        </div>
+                                    )}
 
-                                <div className='w-full'>
-                                    <button className='w-full p-5 bg-blue-500 rounded' onClick={() => handleGotoDay()}>
-                                        Schedule Counseling Today
-                                    </button>
-                                </div>
+                                    <div className='w-full'>
+
+                                        
+                                        <motion.button
+                                         whileHover={{scale: 1.03}}
+                                         whileTap={{scale: 0.95}}
+                                         className='w-full p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleGotoDay}>
+                                            Schedule Counseling Today
+                                        </motion.button>
+                                    </div>
+                                </>
                             )}
+
+                            <div>
+                                {/* insert own sched here */}
+                            </div>
 
                         </div>
                     </div>
                 </div>
             </div>
+
+            <Modal isOpen={submitModal} onClose={handleSubmitModal}>
+                <div className="p-6">
+                    <h3 className="text-lg font-bold mb-4 text-center">
+                        Counseling Schedule
+                    </h3>
+
+                    <div className='border-2 border-blue-50 rounded p-3 bg-blue-200 sm:text-base text-sm'>
+                        <p className='font-semibold'>
+                            Schedule Information:
+                        </p>
+
+                        <div className='ml-4'>
+                            <p>Counselor: {selectedCounselor?.counselorName}</p>
+                            <p>Name: {studentData?.fullName}</p>
+                            <p>Date: {startTime?.toDateString()}</p>
+                            <p>Time: {startTime && endTime ? 
+                                `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                : ''}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div className="mt-4">
+                        <label
+                        htmlFor="rejectionReason"
+                        className="block text-gray-700 mb-1"
+                        >
+                        Reason:
+                        </label>
+                        <textarea
+                        id="rejectionReason"
+                        value={reason}
+                        placeholder='Optional'
+                        onChange={(e) => setReason(e.target.value)}
+                        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                        required
+                        />
+                    </div>
+
+                    <div className="mt-6 flex justify-around">
+                        <motion.button
+                        whileHover={{scale: 1.03}}
+                        whileTap={{scale: 0.95}}
+                        
+                        onClick={handleSubmitModal}
+                        className="mr-2 px-4 py-2 bg-gray-400 text-white font-semibold rounded hover:bg-gray-500 w-full"
+                        >
+                        Cancel
+                        </motion.button>
+
+                        <motion.button
+                        whileHover={{scale: 1.03}}
+                        whileTap={{scale: 0.95}}
+                        onClick={handleSubmitSchedule}
+                        className={'px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc]'}
+                        >
+                        Submit
+                        </motion.button>
+                    </div>
+                </div>
+            </Modal>
         </SidebarStudent>
     );
 };

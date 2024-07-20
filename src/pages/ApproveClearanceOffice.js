@@ -220,7 +220,7 @@ function ApproveClearanceOffice() {
     <Sidebar>
       <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
         <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
-          <h2 className="text-3xl font-bold text-blue-950">Approve Clearance Requests</h2>
+          <h2 className="text-3xl font-bold text-blue-950 text-center">Approve Clearance Requests</h2>
         </div>
 
         <div className="p-5">
