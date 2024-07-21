@@ -219,8 +219,13 @@ const StudentGuidance = () => {
         const isToday = slotInfo.start.toDateString() === today.toDateString();
         const isPastTime = slotInfo.start < new Date();
     
-        if (isWeekend(slotInfo.start) || isDisabledDate(slotInfo.start)) {
+        if (isWeekend(slotInfo.start)) {
             console.log("Cannot schedule on weekends");
+            return;
+        }
+
+        if (isDisabledDate(slotInfo.start)) {
+            console.log("Counselor not available");
             return;
         }
     
@@ -287,7 +292,7 @@ const StudentGuidance = () => {
 
     }, []);
     
-
+    // delete mock events later
     const events = [
         ...counselorSched.map(appointment => ({
             title: appointment.studentId === currentUser.uid 
@@ -527,7 +532,7 @@ const StudentGuidance = () => {
                             {view === Views.DAY ? (
                                 <>
                                     {!selectedCounselor &&(
-                                        <div className='flex justify-center text-gray-500 font-semibold'>
+                                        <div className='flex justify-center text-gray-500 font-semibold items-center text-center'>
                                             <span>Select a counselor to view available schedules</span>
                                         </div>
                                     )}
@@ -545,7 +550,7 @@ const StudentGuidance = () => {
                                     ) : (
                                         <>
                                         {!temporaryEvent &&(
-                                            <div className='flex justify-center text-gray-500 font-semibold'>
+                                            <div className='flex justify-center text-gray-500 font-semibold items-center text-center'>
                                                 <span>Hold and Drag Down to Select Time </span>
                                             </div>
 
@@ -560,7 +565,7 @@ const StudentGuidance = () => {
                             ) : (
                                 <>
                                     {!selectedCounselor &&(
-                                        <div className='flex justify-center text-gray-500 font-semibold mb-4'>
+                                        <div className='flex justify-center text-gray-500 font-semibold mb-4 items-center text-center'>
                                             <span>Select a counselor to view available schedules</span>
                                         </div>
                                     )}
