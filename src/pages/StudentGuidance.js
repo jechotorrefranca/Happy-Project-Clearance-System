@@ -650,11 +650,11 @@ useEffect(() => {
                                     )}
 
                                     {(startTime && endTime) && selectedCounselor ? (
-                                        <div>
+                                        <div className='flex justify-center'>
                                             <motion.button
                                              whileHover={{scale: 1.03}}
                                              whileTap={{scale: 0.95}}
-                                             className='w-full p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleSubmitModal}>
+                                             className='w-full sm:w-[85%] p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleSubmitModal}>
                                                 Set schedule
                                             </motion.button>
                                         </div>
@@ -682,13 +682,13 @@ useEffect(() => {
                                         </div>
                                     )}
 
-                                    <div className='w-full'>
+                                    <div className='w-full flex justify-center'>
 
                                         
                                         <motion.button
                                          whileHover={{scale: 1.03}}
                                          whileTap={{scale: 0.95}}
-                                         className='w-full p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleGotoDay}>
+                                         className='w-full sm:w-[85%] p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleGotoDay}>
                                             Schedule Counseling Today
                                         </motion.button>
                                     </div>
