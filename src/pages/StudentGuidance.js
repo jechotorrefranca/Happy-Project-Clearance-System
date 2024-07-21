@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp, } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp, updateDoc, } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from "../components/AuthContext";
 import SidebarStudent from '../components/SidebarStudent';
@@ -9,6 +9,9 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarStyles.css';
 import Modal from '../components/Modal';
 import { motion } from 'framer-motion';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 const localizer = momentLocalizer(moment);
 
@@ -56,12 +59,16 @@ const StudentGuidance = () => {
     const [temporaryEvent, setTemporaryEvent] = useState(null);
     const [counselors, setCounselors] = useState([]);
     const [counselorSched, setCounselorSched] = useState([]);
+    const [counselorDisabledDate, setCounselorDisabledDate] = useState([]);
+    const [studentSched, setStudentSched] = useState([]);
+    const [filteredStudentSched, setFilteredStudentSched] = useState([]);
     const [selectedCounselor, setSelectedCounselor] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
     const [studentData, setStudentData] = useState(null);
     const [submitModal, setSubmitModal] = useState(false);
     const [reason, setReason] = useState("");
+    const [filterStatus, setFilterStatus] = useState('all');
 
     // Fetch Student Data
     useEffect(() => {
@@ -121,7 +128,7 @@ const StudentGuidance = () => {
         fetchCounselors();
     }, [studentData]);
     
-
+    //guidance appointments fetch
     useEffect(() => {
         if (!selectedCounselor) {
             setCounselorSched([]);
@@ -144,11 +151,112 @@ const StudentGuidance = () => {
     
         return () => unsubscribe();
     }, [selectedCounselor?.uid]);
+
+    // modify this when guidance side is done
+
+    //disabled date
+    // useEffect(() => {
+    //     if (!selectedCounselor) {
+    //         setCounselorSched([]);
+    //         return;
+    //     }
     
+    //     const usersCollection = collection(db, 'users');
+    //     const q = query(usersCollection, where('uid', '==', selectedCounselor.uid));
+        
+    //     const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    //         const counselorSched = querySnapshot.docs.map(doc => ({
+    //             id: doc.id,
+    //             ...doc.data()
+    //         }));
+            
+    //         setCounselorDisabledDate(counselorSched);
+    //     }, (error) => {
+    //         console.error("Error fetching schedule: ", error);
+    //     });
+    
+    //     return () => unsubscribe();
+    // }, [selectedCounselor?.uid]);
+ 
+// student sched fetch and update status if past time
+useEffect(() => {
+    if (!currentUser) {
+        return;
+    }
+
+    const usersCollection = collection(db, 'guidanceAppointments');
+    const q = query(usersCollection, where('studentId', '==', currentUser.uid));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const now = new Date();
+
+        querySnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const start = new Date(data.start);
+            const end = new Date(data.end);
+
+            if (data.status === "pending" && start.toDateString() === now.toDateString() && end < now) {
+                updateDoc(doc.ref, { status: "did not respond" });
+            } else if (data.status === "approved" && start.toDateString() === now.toDateString() && end < now) {
+                updateDoc(doc.ref, { status: "finished" });
+            }
+        });
+
+        const studentSched = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        setStudentSched(studentSched);
+
+    }, (error) => {
+        console.error("Error fetching student schedule: ", error);
+    });
+
+    return () => unsubscribe();
+}, [currentUser?.uid]);
+
+    
+  // Filters
+  useEffect(() => {
+    let sched = [...studentSched];
+
+    // Status
+    if (filterStatus === 'approved') {
+      sched = sched.filter(sched =>
+        sched.status === 'approved'
+      );
+    } else if (filterStatus === 'pending') {
+      sched = sched.filter(sched =>
+        sched.status === 'pending'
+      );
+    } else if (filterStatus === 'finished') {
+        sched = sched.filter(sched =>
+          sched.status === 'finished'
+        );
+    } else if (filterStatus === 'rescheduled') {
+        sched = sched.filter(sched =>
+          sched.status === 'rescheduled'
+        );
+    } else if (filterStatus === 'pending') {
+        sched = sched.filter(sched =>
+          sched.status === 'did not respond'
+        );
+    }
+
+    // all
+    if (filterStatus !== 'all') {
+      sched = sched.filter(sched =>
+        sched.status === filterStatus
+      );
+    }
+
+    setFilteredStudentSched(sched);
+  }, [filterStatus, studentSched]);
     
 
     const disabledDates = [
-        // replace with data in firebase
+        // replace with data in firebase later
         new Date(2024, 6, 22),
         new Date(2024, 6, 24),
     ];
@@ -220,17 +328,17 @@ const StudentGuidance = () => {
         const isPastTime = slotInfo.start < new Date();
     
         if (isWeekend(slotInfo.start)) {
-            console.log("Cannot schedule on weekends");
+            showWarnToast("Cannot schedule on weekends");
             return;
         }
 
         if (isDisabledDate(slotInfo.start)) {
-            console.log("Counselor not available");
+            showWarnToast("Counselor not available");
             return;
         }
     
         if ((view === Views.DAY) && isOutsideAllowedTime(slotInfo.start, slotInfo.end || new Date(slotInfo.start.getTime() + 60 * 60 * 1000))) {
-            console.log("The selected slot is outside of permissible hours; no action will be taken.");
+            showWarnToast("The selected slot is outside of permissible hours");
             setStartTime(null);
             setEndTime(null);
             setTemporaryEvent(null);
@@ -238,12 +346,12 @@ const StudentGuidance = () => {
         }
 
         if (isPastDate) {
-            console.log("Scheduling in the past is not allowed.");
+            showWarnToast("Scheduling in the past is not allowed");
             return;
         }
     
         if (isToday && isPastTime) {
-            console.log("Cannot schedule for a past time today.");
+            showWarnToast("Cannot schedule for a past time today");
             setStartTime(null);
             setEndTime(null);
             setTemporaryEvent(null);
@@ -254,7 +362,6 @@ const StudentGuidance = () => {
             setView(Views.DAY);
         }
     
-        console.log("Selected Date:", slotInfo.start);
         setDate(slotInfo.start);
     
         const add30Minutes = (date) => {
@@ -272,7 +379,6 @@ const StudentGuidance = () => {
             setStartTime(slotInfo.start);
             setEndTime(add30Minutes(slotInfo.start));
     
-            console.log("Temporary event created1.");
         } else {
             setTemporaryEvent(null);
 
@@ -286,7 +392,6 @@ const StudentGuidance = () => {
             setEndTime(null);
             return;
         }
-        console.log('Clicked Event:', event);
         setDate(event.start);
         setView(Views.DAY);
 
@@ -302,58 +407,26 @@ const StudentGuidance = () => {
             end: appointment.end.toDate(),
             status: appointment.status
         })),
-        {
-            title: 'Anonymous',
-            start: new Date(2024, 6, 29, 9, 0),
-            end: new Date(2024, 6, 29, 10, 0),
-            status: 'pending'
-        },
-        {
-            title: 'Anonymous',
-            start: new Date(2024, 6, 23, 11, 0),
-            end: new Date(2024, 6, 23, 12, 0),
-            status: 'finished'
-        },
-        {
-            title: 'Anonymous',
-            start: new Date(2024, 6, 17, 13, 0),
-            end: new Date(2024, 6, 17, 14, 0),
-            status: 'rescheduled'
-        },
-        {
-            title: 'Anonymous',
-            start: new Date(2024, 6, 25, 15, 0),
-            end: new Date(2024, 6, 25, 17, 0),
-            status: 'did not respond'
-        },
-        {
-            title: 'Anonymous',
-            start: new Date(2024, 6, 26, 10, 0),
-            end: new Date(2024, 6, 26, 12, 0),
-            status: 'approved'
-        },
         temporaryEvent,
     ].filter(event => event);
     
 
     const handleGotoDay = () => {
-        console.log("start: ", startTime);
-        console.log("end: ", endTime);
 
         const today = new Date();
     
         if (isWeekend(today)) {
-            console.log("Scheduling is not available on weekends. Please select alternative dates");
+            showWarnToast("Scheduling is not available on weekends. Please select alternative dates");
             return;
         }
 
         if (isDisabledDate(today)) {
-            console.log("Counselor not available. Please select alternative dates");
+            showWarnToast("Counselor not available. Please select alternative dates");
             return;
         }
 
         if (isDisabledDate(today)) {
-            console.log("Counselor not available today");
+            showWarnToast("Counselor not available today");
             return;
         }
 
@@ -385,7 +458,7 @@ const StudentGuidance = () => {
             reason: reason,
             timestamp: serverTimestamp(),
           });
-          console.log("Schedule submitted successfully.");
+          showSuccessToast("Schedule submitted successfully");
 
           // Add to activityLog collection
           const activityLogRef = collection(db, "activityLog");
@@ -405,17 +478,56 @@ const StudentGuidance = () => {
 
         } catch (error) {
           console.error("Error submitting schedule:", error);
+          showFailedToast("Error submitting schedule");
         }
       };
     
     const handleSubmitModal = () => {
         setSubmitModal(prevState => !prevState);
     }
+
+    const showSuccessToast = (msg) => toast.success(msg, {
+        position: "top-center",
+        autoClose: 2500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        transition: Bounce,
+        });
+    
+        const showFailedToast = (msg) => toast.error(msg, {
+          position: "top-center",
+          autoClose: 2500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+          transition: Bounce,
+          });
+  
+      const showWarnToast = (msg) => toast.warn(msg, {
+        position: "top-center",
+        autoClose: 2500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+        transition: Bounce,
+        });
+  
     
       
 
     return (
         <SidebarStudent>
+            <ToastContainer/>
             <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
                 <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
                     <h2 className="text-3xl font-bold text-blue-950 text-center">Guidance Counseling</h2>
@@ -510,8 +622,8 @@ const StudentGuidance = () => {
                         </div>
 
                         <div className="w-full bg-blue-100 p-5 rounded my-4">
-                            <label htmlFor="filterCounselor" className="block text-gray-700 mb-1">
-                                Choose Counselor: 
+                            <label htmlFor="filterCounselor" className="block text-gray-700 mb-1 font-semibold">
+                                Counselor: {selectedCounselor?.counselorName}
                             </label>
                             <select
                                 id="filterCounselor"
@@ -583,9 +695,77 @@ const StudentGuidance = () => {
                                 </>
                             )}
 
-                            <div>
-                                {/* insert own sched here */}
+                            <div className='border-b-2 border-green-300 my-4'/>
+
+                            <div className='bg-green-100'>
+                                <div>
+                                    <p className='text-xl font-semibold flex justify-center text-center bg-green-200 p-3 rounded'>Your Schedules</p>
+                                </div>
+
+                                <div className="w-full p-5 rounded my-4">
+                                    <label htmlFor="filterCounselor" className="block text-gray-700 mb-1">
+                                        Filter by Status:
+                                    </label>
+
+                                    <select
+                                    id="filterStatus"
+                                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-green-300"
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    >
+                                        <option value="all">All</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="rescheduled">Rescheduled</option>
+                                        <option value="finished">Finished</option>
+                                        <option value="did not respond">Did not respond</option>
+
+                                    </select>
+
+                                    <div className='mt-4 overflow-auto max-h-[40vh]'>
+                                        {filteredStudentSched.map(sched => {
+                                            let bgColor;
+                                            switch (sched.status) {
+                                                case "pending":
+                                                bgColor = "#C8E3FF";
+                                                break;
+                                                case "approved":
+                                                bgColor = "#C1FFC4";
+                                                break;
+                                                case "reschedule":
+                                                bgColor = "#FFFCBF";
+                                                break;
+                                                case "finished":
+                                                bgColor = "#DDBAFE";
+                                                break;
+                                                case "did not respond":
+                                                bgColor = "#FFBFBF";
+                                                break;
+                                                default:
+                                                bgColor = "#C0C0C0";
+                                            }
+
+                                            return (
+                                                <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base' key={sched.id} style={{ backgroundColor: bgColor }}>
+                                                <p className='sm:text-lg text-sm font-bold '>
+                                                    Counselor: {sched.counselorName}
+                                                </p>
+                                                <p>Status: {sched.status}</p>
+                                                <p>Date: {new Date(sched.start.seconds * 1000).toDateString("en-US")}</p>
+                                                        <p>Time: {sched.start && sched.end ? 
+                                                            `${new Date(sched.start.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(sched.end.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                                            : 'N/A'}
+                                                        </p>
+                                                </div>
+                                            );
+                                            })}
+
+                                    </div>
+                                </div>
+
+
                             </div>
+
 
                         </div>
                     </div>
@@ -598,8 +778,8 @@ const StudentGuidance = () => {
                         Counseling Schedule
                     </h3>
 
-                    <div className='border-2 border-blue-50 rounded p-3 bg-blue-200 sm:text-base text-sm'>
-                        <p className='font-semibold'>
+                    <div className='border-2 border-blue-50 rounded p-5 bg-blue-200 sm:text-base text-sm'>
+                        <p className='font-semibold pb-1'>
                             Schedule Information:
                         </p>
 
