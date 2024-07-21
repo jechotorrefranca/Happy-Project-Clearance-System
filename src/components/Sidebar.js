@@ -19,7 +19,7 @@ import {
   UserIcon
 } from '@heroicons/react/24/outline';
 import {
-  UsersIcon
+  UserGroupIcon as UserGroupIconSolid
 } from "@heroicons/react/24/solid";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import {
