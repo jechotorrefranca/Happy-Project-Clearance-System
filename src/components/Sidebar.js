@@ -15,8 +15,12 @@ import {
   Bars3Icon,
   CalendarIcon,
   CreditCardIcon,
-  LockClosedIcon
+  LockClosedIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
+import {
+  UsersIcon
+} from "@heroicons/react/24/solid";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import {
   getFirestore,
