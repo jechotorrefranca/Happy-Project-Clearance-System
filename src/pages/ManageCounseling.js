@@ -2,8 +2,10 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp, updateDoc, } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from "../components/AuthContext";
-import SidebarStudent from '../components/SidebarStudent';
+import Sidebar from '../components/Sidebar';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
+import ReactCalendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarStyles.css';
@@ -52,7 +54,7 @@ const eventStyleGetter = (event) => {
     };
 };
 
-const StudentGuidance = () => {
+const ManageCounseling = () => {
     const { currentUser } = useAuth();
     const [view, setView] = useState(Views.MONTH);
     const [date, setDate] = useState(new Date());
@@ -62,6 +64,7 @@ const StudentGuidance = () => {
     const [counselorDisabledDate, setCounselorDisabledDate] = useState([]);
     const [studentSched, setStudentSched] = useState([]);
     const [filteredStudentSched, setFilteredStudentSched] = useState([]);
+    const [filterTodaySched, settFilterTodaySched] = useState([]);
     const [selectedCounselor, setSelectedCounselor] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
@@ -70,32 +73,35 @@ const StudentGuidance = () => {
     const [reason, setReason] = useState("");
     const [filterStatus, setFilterStatus] = useState('all');
     const [disabledButton, setDisabledButton] = useState(false);
+    const [unDate, setUnDate] = useState(new Date());
+    const [unavailableDates, setUnavailableDates] = useState([]);
+    
 
-    // Fetch Student Data
-    useEffect(() => {
-      if (!currentUser) return;
+    // // Fetch Student Data not needed?
+    // useEffect(() => {
+    //   if (!currentUser) return;
   
-      const fetchStudentData = async () => {
-        try {
-          const studentsRef = collection(db, "students");
-          const q = query(studentsRef, where("uid", "==", currentUser.uid));
+    //   const fetchStudentData = async () => {
+    //     try {
+    //       const studentsRef = collection(db, "students");
+    //       const q = query(studentsRef, where("uid", "==", currentUser.uid));
   
-          const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            querySnapshot.forEach((doc) => {
-              setStudentData(doc.data());
-            });
-          });
+    //       const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    //         querySnapshot.forEach((doc) => {
+    //           setStudentData(doc.data());
+    //         });
+    //       });
   
-          return () => {
-            unsubscribe();
-          };
-        } catch (error) {
-          console.error("Error fetching student data:", error);
-        }
-      };
+    //       return () => {
+    //         unsubscribe();
+    //       };
+    //     } catch (error) {
+    //       console.error("Error fetching student data:", error);
+    //     }
+    //   };
   
-      fetchStudentData();
-    }, [currentUser, setStudentData]);
+    //   fetchStudentData();
+    // }, [currentUser, setStudentData]);
 
     useEffect(() => {
         const fetchCounselors = async () => {
@@ -128,33 +134,46 @@ const StudentGuidance = () => {
     
         fetchCounselors();
     }, [studentData]);
-    
-    //guidance appointments fetch
+
+    // student sched fetch and update status if past time
     useEffect(() => {
-        if (!selectedCounselor) {
-            setCounselorSched([]);
+        if (!currentUser) {
             return;
         }
-    
+
         const usersCollection = collection(db, 'guidanceAppointments');
-        const q = query(usersCollection, where('counselorId', '==', selectedCounselor.uid));
-        
+        const q = query(usersCollection, where('counselorId', '==', currentUser.uid));
+
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const now = new Date();
+
+            querySnapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const start = new Date(data.start);
+                const end = new Date(data.end);
+
+                if (data.status === "pending" && start.toDateString() === now.toDateString() && end < now) {
+                    updateDoc(doc.ref, { status: "did not respond" });
+                } else if (data.status === "approved" && start.toDateString() === now.toDateString() && end < now) {
+                    updateDoc(doc.ref, { status: "finished" });
+                }
+            });
+
             const counselorSched = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
-            
+
             setCounselorSched(counselorSched);
+
         }, (error) => {
-            console.error("Error fetching schedule: ", error);
+            console.error("Error fetching student schedule: ", error);
         });
-    
+
         return () => unsubscribe();
-    }, [selectedCounselor?.uid]);
+    }, [currentUser?.uid]);
 
     // modify this when guidance side is done
-
     //disabled date
     // useEffect(() => {
     //     if (!selectedCounselor) {
@@ -178,56 +197,43 @@ const StudentGuidance = () => {
     
     //     return () => unsubscribe();
     // }, [selectedCounselor?.uid]);
- 
-// student sched fetch and update status if past time
-useEffect(() => {
-    if (!currentUser) {
-        return;
-    }
-
-    const usersCollection = collection(db, 'guidanceAppointments');
-    const q = query(usersCollection, where('studentId', '==', currentUser.uid));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const now = new Date();
-
-        querySnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const start = new Date(data.start);
-            const end = new Date(data.end);
-
-            if (data.status === "pending" && start.toDateString() === now.toDateString() && end < now) {
-                updateDoc(doc.ref, { status: "did not respond" });
-            } else if (data.status === "approved" && start.toDateString() === now.toDateString() && end < now) {
-                updateDoc(doc.ref, { status: "finished" });
-            }
-        });
-
-        const studentSched = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-
-        setStudentSched(studentSched);
-
-    }, (error) => {
-        console.error("Error fetching student schedule: ", error);
-    });
-
-    return () => unsubscribe();
-}, [currentUser?.uid]);
 
     
-  // Filters
-  useEffect(() => {
-    let sched = [...studentSched];
+    // Filters
+    useEffect(() => {
+        let sched = [...counselorSched];
+    
+        if (filterStatus !== 'all') {
+            sched = sched.filter(sched => sched.status === filterStatus);
+        }
+    
+        sched.sort((a, b) => {
+            const dateA = a.start.seconds * 1000;
+            const dateB = b.start.seconds * 1000;
+            return dateA - dateB;
+        });
+    
+        const today = new Date();
+        const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+        const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+    
+        const todaySched = counselorSched.filter(sched => {
+            const schedDate = new Date(sched.start.seconds * 1000);
+            return schedDate >= startOfToday && schedDate <= endOfToday;
+        });
 
-    if (filterStatus !== 'all') {
-        sched = sched.filter(sched => sched.status === filterStatus);
-    }
+        todaySched.sort((a, b) => {
+            const dateA = a.start.seconds * 1000;
+            const dateB = b.start.seconds * 1000;
+            return dateA - dateB;
+        });
+    
+        setFilteredStudentSched(sched);
+        settFilterTodaySched(todaySched);
+    
+    }, [filterStatus, counselorSched]);
+    
 
-    setFilteredStudentSched(sched);
-}, [filterStatus, studentSched]);
     
 
     const disabledDates = [
@@ -303,7 +309,7 @@ useEffect(() => {
         const isPastTime = slotInfo.start < new Date();
     
         if (isWeekend(slotInfo.start)) {
-            showWarnToast("Cannot schedule on weekends");
+            showWarnToast("Weekends not available");
             return;
         }
 
@@ -339,25 +345,26 @@ useEffect(() => {
     
         setDate(slotInfo.start);
     
-        const add30Minutes = (date) => {
-            return new Date(date.getTime() + 30 * 60 * 1000);
-        };
+        // const add30Minutes = (date) => {
+        //     return new Date(date.getTime() + 30 * 60 * 1000);
+        // };
 
-        if (!isOutsideAllowedTime(slotInfo.start, add30Minutes(slotInfo.start))) {
-            setTemporaryEvent({
-                title: '- You',
-                start: slotInfo.start,
-                end: add30Minutes(slotInfo.start),
-                status: 'display'
-            });
+        // if (!isOutsideAllowedTime(slotInfo.start, add30Minutes(slotInfo.start))) {
+        //     setTemporaryEvent({
+        //         title: '- You',
+        //         start: slotInfo.start,
+        //         end: add30Minutes(slotInfo.start),
+        //         status: 'display'
+        //     });
 
-            setStartTime(slotInfo.start);
-            setEndTime(add30Minutes(slotInfo.start));
+        //     setStartTime(slotInfo.start);
+        //     setEndTime(add30Minutes(slotInfo.start));
     
-        } else {
-            setTemporaryEvent(null);
+        // } else {
+        //     setTemporaryEvent(null);
 
-        }
+        // }
+
     }, [view, disabledDates]);
     
     const handleSelectEvent = useCallback((event) => {
@@ -375,9 +382,7 @@ useEffect(() => {
     // delete mock events later
     const events = [
         ...counselorSched.map(appointment => ({
-            title: appointment.studentId === currentUser.uid 
-                ? (view === Views.MONTH ? "You" : "- You") 
-                : (view === Views.MONTH ? "Anonymous" : "- Anonymous"), 
+            title: view === Views.MONTH ? `${appointment.fullName}` : `- ${appointment.fullName} - ${appointment.gradeLevel} ${appointment.section}`, 
             start: appointment.start.toDate(),
             end: appointment.end.toDate(),
             status: appointment.status
@@ -415,53 +420,74 @@ useEffect(() => {
         setSelectedCounselor(selected);
     };
 
-    const handleSubmitSchedule = async () => {
-        setDisabledButton(true);
-        try {
-          await addDoc(collection(db, 'guidanceAppointments'), {
-            start: new Date(startTime),
-            end: new Date(endTime),
-            reason: "reason",
-            counselorName: selectedCounselor.counselorName,
-            status: "pending",
-            studentId: currentUser.uid,
-            counselorId: selectedCounselor.uid,
-            section: studentData.section,
-            department: studentData.department,
-            gradeLevel: studentData.gradeLevel,
-            fullName: studentData.fullName,
-            studentEmail: studentData.email,
-            reason: reason,
-            timestamp: serverTimestamp(),
-          });
-          showSuccessToast("Schedule submitted successfully");
+    const handleSubmitUnavailableSchedule = () => {
+        //setDisabledButton dont forget
+        console.log("pressed");
+    }
 
-          // Add to activityLog collection
-          const activityLogRef = collection(db, "activityLog");
-          await addDoc(activityLogRef, {
-              date: serverTimestamp(),
-              subject: selectedCounselor.counselorName,
-              type: 'counseling',
-              studentId: currentUser.uid
-          });
+    // const handleSubmitSchedule = async () => {
+    //     setDisabledButton(true);
+    //     try {
+    //       await addDoc(collection(db, 'guidanceAppointments'), {
+    //         start: new Date(startTime),
+    //         end: new Date(endTime),
+    //         reason: "reason",
+    //         counselorName: selectedCounselor.counselorName,
+    //         status: "pending",
+    //         studentId: currentUser.uid,
+    //         counselorId: selectedCounselor.uid,
+    //         section: studentData.section,
+    //         department: studentData.department,
+    //         gradeLevel: studentData.gradeLevel,
+    //         fullName: studentData.fullName,
+    //         studentEmail: studentData.email,
+    //         reason: reason,
+    //         timestamp: serverTimestamp(),
+    //       });
+    //       showSuccessToast("Schedule submitted successfully");
 
-          setTemporaryEvent(null);
-          setStartTime(null);
-          setEndTime(null);
-          setSelectedCounselor(null);
-          setReason('');
-          setSubmitModal(false);
-          setDisabledButton(false);
+    //       // Add to activityLog collection
+    //       const activityLogRef = collection(db, "activityLog");
+    //       await addDoc(activityLogRef, {
+    //           date: serverTimestamp(),
+    //           subject: selectedCounselor.counselorName,
+    //           type: 'counseling',
+    //           studentId: currentUser.uid
+    //       });
 
-        } catch (error) {
-          console.error("Error submitting schedule:", error);
-          showFailedToast("Error submitting schedule");
-        }
-      };
+    //       setTemporaryEvent(null);
+    //       setStartTime(null);
+    //       setEndTime(null);
+    //       setSelectedCounselor(null);
+    //       setReason('');
+    //       setSubmitModal(false);
+    //       setDisabledButton(false);
+
+    //     } catch (error) {
+    //       console.error("Error submitting schedule:", error);
+    //       showFailedToast("Error submitting schedule");
+    //     }
+    //   };
     
     const handleSubmitModal = () => {
         setSubmitModal(prevState => !prevState);
     }
+
+    const handleDateClick = (value) => {
+        // Normalize date to midnight and format as YYYY-MM-DD using moment
+        const dateStr = moment(value).startOf('day').format('YYYY-MM-DD');
+        setUnavailableDates((prev) => {
+          const dateExists = prev.includes(dateStr);
+          const updatedDates = dateExists
+            ? prev.filter((d) => d !== dateStr) // Remove the date if it already exists
+            : [...prev, dateStr]; // Add the date if it doesn't exist
+    
+          console.log('Clicked date:', dateStr);
+          console.log('Updated unavailable dates:', updatedDates); // Log the updated array
+          return updatedDates;
+        });
+      };
+      
 
     const showSuccessToast = (msg) => toast.success(msg, {
         position: "top-center",
@@ -503,7 +529,7 @@ useEffect(() => {
       
 
     return (
-        <SidebarStudent>
+        <Sidebar>
             <ToastContainer/>
             <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
                 <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
@@ -598,83 +624,21 @@ useEffect(() => {
                             />
                         </div>
 
-                        <div className="w-full bg-blue-100 p-5 rounded my-4">
-                            <label htmlFor="filterCounselor" className="block text-gray-700 mb-1 font-semibold">
-                                Counselor: {selectedCounselor?.counselorName}
-                            </label>
-                            <select
-                                id="filterCounselor"
-                                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-                                value={selectedCounselor ? selectedCounselor.id : ''}
-                                onChange={handleCounselorChange}
-                            >
-                                <option value="">Select a counselor</option>
-                                {counselors.map(counselor => (
-                                    <option key={counselor.id} value={counselor.id}>
-                                        {counselor.counselorName}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className='flex justify-center mt-4'>
+                            <motion.button
+                             whileHover={{scale: 1.03}}
+                             whileTap={{scale: 0.95}}
+                             className='w-full sm:w-[85%] p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleSubmitModal}>
+                                Set Unavailable Dates for Counselors
+                            </motion.button>
                         </div>
 
-                        <div className='mt-4'>
-                            {view === Views.DAY ? (
-                                <>
-                                    {!selectedCounselor &&(
-                                        <div className='flex justify-center text-gray-500 font-semibold items-center text-center'>
-                                            <span>Select a counselor to view available schedules</span>
-                                        </div>
-                                    )}
+                        <div className='border-b-2 border-green-300 my-4'/>
 
-                                    {(startTime && endTime) && selectedCounselor ? (
-                                        <div className='flex justify-center'>
-                                            <motion.button
-                                             whileHover={{scale: 1.03}}
-                                             whileTap={{scale: 0.95}}
-                                             className='w-full sm:w-[85%] p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleSubmitModal}>
-                                                Set schedule
-                                            </motion.button>
-                                        </div>
-                                        
-                                    ) : (
-                                        <>
-                                        {!temporaryEvent &&(
-                                            <div className='flex justify-center text-gray-500 font-semibold items-center text-center'>
-                                                <span>Hold and Drag Down to Select Time </span>
-                                            </div>
-
-                                        )}
+                        <div className='mt-4 xl:flex gap-2 justify-between'>
 
 
-                                        </>
-                                    )}
-                                
-                                </>
-
-                            ) : (
-                                <>
-                                    {!selectedCounselor &&(
-                                        <div className='flex justify-center text-gray-500 font-semibold mb-4 items-center text-center'>
-                                            <span>Select a counselor to view available schedules</span>
-                                        </div>
-                                    )}
-
-                                    <div className='w-full flex justify-center'>
-
-                                        
-                                        <motion.button
-                                         whileHover={{scale: 1.03}}
-                                         whileTap={{scale: 0.95}}
-                                         className='w-full sm:w-[85%] p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleGotoDay}>
-                                            Schedule Counseling Today
-                                        </motion.button>
-                                    </div>
-                                </>
-                            )}
-
-                            <div className='border-b-2 border-green-300 my-4'/>
-
-                            <div className='bg-green-100'>
+                            <div className='bg-green-100 w-full rounded'>
                                 <div>
                                     <p className='text-xl font-semibold flex justify-center text-center bg-green-200 p-3 rounded'>Your Schedules</p>
                                 </div>
@@ -725,7 +689,57 @@ useEffect(() => {
                                             return (
                                                 <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base' key={sched.id} style={{ backgroundColor: bgColor }}>
                                                 <p className='sm:text-lg text-sm font-bold '>
-                                                    Counselor: {sched.counselorName}
+                                                    Student: {sched.fullName} - {sched.gradeLevel} {sched.section}
+                                                </p>
+                                                <p>Status: {sched.status}</p>
+                                                <p>Date: {new Date(sched.start.seconds * 1000).toDateString("en-US")}</p>
+                                                <p>Time: {sched.start && sched.end ? 
+                                                    `${new Date(sched.start.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(sched.end.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                                    : 'N/A'}
+                                                </p>
+                                                <p>{sched.id}</p>
+                                                </div>
+                                            );
+                                            })}
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className='bg-green-100 w-full rounded'>
+                                <div>
+                                    <p className='text-xl font-semibold flex justify-center text-center bg-green-200 p-3 rounded'>Schedules Today</p>
+                                </div>
+
+                                <div className="w-full p-5 rounded mb-4">
+
+                                    <div className='mt-4 overflow-auto max-h-[46.6vh]'>
+                                        {filterTodaySched.map(sched => {
+                                            let bgColor;
+                                            switch (sched.status) {
+                                                case "pending":
+                                                bgColor = "#C8E3FF";
+                                                break;
+                                                case "approved":
+                                                bgColor = "#C1FFC4";
+                                                break;
+                                                case "reschedule":
+                                                bgColor = "#FFFCBF";
+                                                break;
+                                                case "finished":
+                                                bgColor = "#DDBAFE";
+                                                break;
+                                                case "did not respond":
+                                                bgColor = "#FFBFBF";
+                                                break;
+                                                default:
+                                                bgColor = "#C0C0C0";
+                                            }
+
+                                            return (
+                                                <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base' key={sched.id} style={{ backgroundColor: bgColor }}>
+                                                <p className='sm:text-lg text-sm font-bold '>
+                                                    Student: {sched.fullName} - {sched.gradeLevel} {sched.section}
                                                 </p>
                                                 <p>Status: {sched.status}</p>
                                                 <p>Date: {new Date(sched.start.seconds * 1000).toDateString("en-US")}</p>
@@ -739,8 +753,6 @@ useEffect(() => {
 
                                     </div>
                                 </div>
-
-
                             </div>
 
 
@@ -750,9 +762,65 @@ useEffect(() => {
             </div>
 
             <Modal isOpen={submitModal} onClose={handleSubmitModal}>
+                <div className='p-6'>
+                    <h3 className="text-lg font-bold mb-4 text-center">
+                        Select Unavailable Schedule
+                    </h3>
+                    <div className="p-4 max-w-md mx-auto flex justify-center">
+                        <ReactCalendar
+                            onChange={setUnDate}
+                            value={unDate}
+                            tileClassName={({ date }) =>
+                            unavailableDates.includes(moment(date).startOf('day').format('YYYY-MM-DD'))
+                                ? 'unavailable'
+                                : null
+                            }
+                            onClickDay={handleDateClick}
+                            className=""
+                        />
+                        <style>
+                            {`
+                            .unavailable {
+                                background: red !important;
+                                color: white;
+                            }
+                            `}
+                        </style>
+                    </div>
+
+                    <div className="mt-6 flex justify-around">
+                        <motion.button
+                        whileHover={{scale: 1.03}}
+                        whileTap={{scale: 0.95}}
+                        
+                        onClick={handleSubmitModal}
+                        className="mr-2 px-4 py-2 bg-gray-400 text-white font-semibold rounded hover:bg-gray-500 w-full"
+                        >
+                        Cancel
+                        </motion.button>
+
+                        <motion.button
+                        whileHover={{scale: 1.03}}
+                        whileTap={{scale: 0.95}}
+                        onClick={handleSubmitUnavailableSchedule}
+                        className={`px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc] ${
+                            disabledButton
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-[#ffd1dc]"
+                          }`}
+                        disabled={disabledButton}
+                        >
+                        Submit
+                        </motion.button>
+                    </div>
+
+                </div>
+            </Modal>
+
+            <Modal>
                 <div className="p-6">
                     <h3 className="text-lg font-bold mb-4 text-center">
-                        Counseling Schedule
+                        Approve Coounseling?
                     </h3>
 
                     <div className='border-2 border-blue-50 rounded p-5 bg-blue-200 sm:text-base text-sm'>
@@ -803,7 +871,7 @@ useEffect(() => {
                         <motion.button
                         whileHover={{scale: 1.03}}
                         whileTap={{scale: 0.95}}
-                        onClick={handleSubmitSchedule}
+                        onClick={() => {console.log("dsd")}}
                         className={`px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc] ${
                             disabledButton
                               ? "bg-gray-400 cursor-not-allowed"
@@ -815,9 +883,16 @@ useEffect(() => {
                         </motion.button>
                     </div>
                 </div>
+
             </Modal>
-        </SidebarStudent>
+
+            <Modal>
+                <p>Reschedule Counseling?</p>
+
+            </Modal>
+
+        </Sidebar>
     );
 };
 
-export default StudentGuidance;
+export default ManageCounseling;

@@ -205,6 +205,11 @@ const navigationOptions = {
       icon: HomeIcon,
     },
     {
+      name: "Manage Counseling",
+      href: "/manage-counseling",
+      icon: UserIcon,
+    },
+    {
       name: "Office Requirements",
       href: "/manage-office-requirements",
       icon: ClipboardDocumentCheckIcon,

@@ -49,7 +49,6 @@ const SignIn = () => {
             case "Finance":
             case "Basic Education Registrar":
             case "College Library":
-            case "Guidance Office":
             case "Office of The Dean":
             case "Office of the Finance Director":
             case "Office of the Registrar":
@@ -58,6 +57,9 @@ const SignIn = () => {
             case "Director/Principal":
             case "OSAS":
               navigate("/approve-clearance-office");
+              break;
+            case "Guidance Office":
+              navigate("/manage-counseling");
               break;
             default:
               navigate("/dashboard");

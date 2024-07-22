@@ -41,6 +41,7 @@ import Notification from "./pages/Notifications";
 import StudentDashboard from "./pages/StudentDashboard";
 import ChangePassword from "./pages/ChangePassword";
 import StudentGuidance from "./pages/StudentGuidance";
+import ManageCounseling from "./pages/ManageCounseling";
 
 
 const router = createBrowserRouter([
@@ -252,7 +253,13 @@ const router = createBrowserRouter([
     element: <RoleBasedRoute allowedRoles={['Character Renewal Office', 'Finance', 'Guidance Office', 'Office of The Dean', 'Student Council', 'OSAS', 'Librarian']}>
       <OfficeClearanceManual />
     </RoleBasedRoute> 
-  }
+  },
+  { 
+    path: "/manage-counseling", 
+    element: <RoleBasedRoute allowedRoles={['Guidance Office']}>
+      <ManageCounseling />
+    </RoleBasedRoute> 
+  },
 ]);
 
 function App() {

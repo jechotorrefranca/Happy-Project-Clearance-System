@@ -18,3 +18,11 @@
   background-color: #e0e0e0;
 }
 
+/* calendar.css */
+.react-calendar {
+  @apply rounded-lg border border-gray-200;
+}
+
+.react-calendar__tile {
+  @apply p-2;
+}
