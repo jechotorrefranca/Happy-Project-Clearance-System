@@ -69,6 +69,7 @@ const StudentGuidance = () => {
     const [submitModal, setSubmitModal] = useState(false);
     const [reason, setReason] = useState("");
     const [filterStatus, setFilterStatus] = useState('all');
+    const [disabledButton, setDisabledButton] = useState(false);
 
     // Fetch Student Data
     useEffect(() => {
@@ -106,7 +107,7 @@ const StudentGuidance = () => {
                 
                 if (studentData.educationLevel === 'elementary') {
                     q = query(q, where('educationLevel', '==', 'elementary'));
-                } else if (studentData.educationLevel === 'junior high school' || studentData.educationalLevel === 'senior high school') {
+                } else if (studentData.educationLevel === 'junior high school' || studentData.educationLevel === 'senior high school') {
                     q = query(q, where('educationLevel', 'in', ['junior high school', 'senior high school']));
                 } else if (studentData.educationLevel === 'college') {
                     q = query(q, where('educationLevel', '==', 'college'));
@@ -402,7 +403,7 @@ useEffect(() => {
         ...counselorSched.map(appointment => ({
             title: appointment.studentId === currentUser.uid 
                 ? (view === Views.MONTH ? "You" : "- You") 
-                : "- Anonymous",
+                : (view === Views.MONTH ? "Anonymous" : "- Anonymous"), 
             start: appointment.start.toDate(),
             end: appointment.end.toDate(),
             status: appointment.status
@@ -441,6 +442,7 @@ useEffect(() => {
     };
 
     const handleSubmitSchedule = async () => {
+        setDisabledButton(true);
         try {
           await addDoc(collection(db, 'guidanceAppointments'), {
             start: new Date(startTime),
@@ -475,6 +477,7 @@ useEffect(() => {
           setSelectedCounselor(null);
           setReason('');
           setSubmitModal(false);
+          setDisabledButton(false);
 
         } catch (error) {
           console.error("Error submitting schedule:", error);
@@ -827,7 +830,12 @@ useEffect(() => {
                         whileHover={{scale: 1.03}}
                         whileTap={{scale: 0.95}}
                         onClick={handleSubmitSchedule}
-                        className={'px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc]'}
+                        className={`px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc] ${
+                            disabledButton
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-[#ffd1dc]"
+                          }`}
+                        disabled={disabledButton}
                         >
                         Submit
                         </motion.button>
