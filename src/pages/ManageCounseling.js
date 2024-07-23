@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp, updateDoc, } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, setDoc, } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from "../components/AuthContext";
 import Sidebar from '../components/Sidebar';
@@ -75,33 +75,7 @@ const ManageCounseling = () => {
     const [disabledButton, setDisabledButton] = useState(false);
     const [unDate, setUnDate] = useState(new Date());
     const [unavailableDates, setUnavailableDates] = useState([]);
-    
-
-    // // Fetch Student Data not needed?
-    // useEffect(() => {
-    //   if (!currentUser) return;
-  
-    //   const fetchStudentData = async () => {
-    //     try {
-    //       const studentsRef = collection(db, "students");
-    //       const q = query(studentsRef, where("uid", "==", currentUser.uid));
-  
-    //       const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    //         querySnapshot.forEach((doc) => {
-    //           setStudentData(doc.data());
-    //         });
-    //       });
-  
-    //       return () => {
-    //         unsubscribe();
-    //       };
-    //     } catch (error) {
-    //       console.error("Error fetching student data:", error);
-    //     }
-    //   };
-  
-    //   fetchStudentData();
-    // }, [currentUser, setStudentData]);
+    const [statusModal, setStatusModal] = useState(false);
 
     useEffect(() => {
         const fetchCounselors = async () => {
@@ -141,62 +115,79 @@ const ManageCounseling = () => {
             return;
         }
 
+        console.log("wth")
+    
         const usersCollection = collection(db, 'guidanceAppointments');
         const q = query(usersCollection, where('counselorId', '==', currentUser.uid));
-
+    
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const now = new Date();
-
+    
             querySnapshot.docs.forEach(doc => {
                 const data = doc.data();
-                const start = new Date(data.start);
-                const end = new Date(data.end);
 
-                if (data.status === "pending" && start.toDateString() === now.toDateString() && end < now) {
-                    updateDoc(doc.ref, { status: "did not respond" });
-                } else if (data.status === "approved" && start.toDateString() === now.toDateString() && end < now) {
-                    updateDoc(doc.ref, { status: "finished" });
+                const start = data.start.seconds * 1000;
+                const end = data.end.seconds * 1000;
+
+    
+                if (
+                    end < now.getTime()
+                ) {
+                    console.log("this should run")
+                    if (data.status === "pending") {
+                        updateDoc(doc.ref, { status: "did not respond" });
+                        console.log("did not respond");
+                    } else if (data.status === "approved") {
+                        updateDoc(doc.ref, { status: "finished" });
+                        console.log("finished");
+                    }
                 }
             });
-
+    
             const counselorSched = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
-
+    
             setCounselorSched(counselorSched);
-
+    
         }, (error) => {
             console.error("Error fetching student schedule: ", error);
         });
-
+    
         return () => unsubscribe();
-    }, [currentUser?.uid]);
+    }, [currentUser.uid]);
+    
 
-    // modify this when guidance side is done
-    //disabled date
-    // useEffect(() => {
-    //     if (!selectedCounselor) {
-    //         setCounselorSched([]);
-    //         return;
-    //     }
-    
-    //     const usersCollection = collection(db, 'users');
-    //     const q = query(usersCollection, where('uid', '==', selectedCounselor.uid));
-        
-    //     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    //         const counselorSched = querySnapshot.docs.map(doc => ({
-    //             id: doc.id,
-    //             ...doc.data()
-    //         }));
-            
-    //         setCounselorDisabledDate(counselorSched);
-    //     }, (error) => {
-    //         console.error("Error fetching schedule: ", error);
-    //     });
-    
-    //     return () => unsubscribe();
-    // }, [selectedCounselor?.uid]);
+    // unavailableCOunselor dates
+    useEffect(() => {
+        if (!currentUser) {
+          return;
+        }
+      
+        const usersCollection = collection(db, 'users');
+        const q = query(usersCollection, where('uid', '==', "1234567890"));
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          if (!querySnapshot.empty) {
+
+            const doc = querySnapshot.docs[0];
+            const data = doc.data();
+
+            const unavailableDates = data.unavailableDates || [];
+            setCounselorDisabledDate(unavailableDates);
+
+            console.log(unavailableDates);
+          } else {
+            console.log('No matching documents found.');
+            setCounselorDisabledDate([]);
+          }
+        }, (error) => {
+          console.error("Error fetching schedule: ", error);
+        });
+      
+        return () => unsubscribe();
+      }, [currentUser]);
 
     
     // Filters
@@ -233,13 +224,8 @@ const ManageCounseling = () => {
     
     }, [filterStatus, counselorSched]);
     
-
-    
-
     const disabledDates = [
-        // replace with data in firebase later
-        new Date(2024, 6, 22),
-        new Date(2024, 6, 24),
+        ...counselorDisabledDate.map(date => new Date(date)),
     ];
 
     const isWeekend = (date) => {
@@ -368,16 +354,25 @@ const ManageCounseling = () => {
     }, [view, disabledDates]);
     
     const handleSelectEvent = useCallback((event) => {
+
+
         if (event.status === 'display') {
             setTemporaryEvent(null);
             setStartTime(null);
             setEndTime(null);
             return;
         }
-        setDate(event.start);
-        setView(Views.DAY);
 
-    }, []);
+        setDate(event.start);
+        // setView(Views.MONTH);
+
+        if (view === Views.DAY) {
+            handleSetStatusModal();
+        } else {
+            setView(Views.DAY)
+        }
+
+    }, [view]);
     
     // delete mock events later
     const events = [
@@ -391,39 +386,33 @@ const ManageCounseling = () => {
     ].filter(event => event);
     
 
-    const handleGotoDay = () => {
+      const updateUnavailableDates = async () => {
+        setDisabledButton(true);
+      
+        try {
+          const userRef = collection(db, 'users');
+          const q = query(userRef, where('uid', '==', '1234567890'));
 
-        const today = new Date();
-    
-        if (isWeekend(today)) {
-            showWarnToast("Scheduling is not available on weekends. Please select alternative dates");
-            return;
+          const querySnapshot = await getDocs(q);
+      
+          if (!querySnapshot.empty) {
+            const docSnapshot = querySnapshot.docs[0];
+            const docRef = doc(db, 'users', docSnapshot.id); // Ensure you use the correct collection name
+            await updateDoc(docRef, {
+              unavailableDates: counselorDisabledDate,
+            });
+      
+            alert('Unavailable schedules saved successfully!');
+          } else {
+            alert('No matching document found!');
+          }
+        } catch (error) {
+          console.error('Error updating documents: ', error);
+        } finally {
+          setDisabledButton(false);
         }
-
-        if (isDisabledDate(today)) {
-            showWarnToast("Counselor not available. Please select alternative dates");
-            return;
-        }
-
-        if (isDisabledDate(today)) {
-            showWarnToast("Counselor not available today");
-            return;
-        }
-
-        setView(Views.DAY);
-        setDate(today);
-    };
-
-    const handleCounselorChange = (e) => {
-        const counselorId = e.target.value;
-        const selected = counselors.find(counselor => counselor.id === counselorId);
-        setSelectedCounselor(selected);
-    };
-
-    const handleSubmitUnavailableSchedule = () => {
-        //setDisabledButton dont forget
-        console.log("pressed");
-    }
+      };
+      
 
     // const handleSubmitSchedule = async () => {
     //     setDisabledButton(true);
@@ -471,19 +460,28 @@ const ManageCounseling = () => {
     
     const handleSubmitModal = () => {
         setSubmitModal(prevState => !prevState);
+        console.log(counselorDisabledDate)
+    }
+
+    const handleCancelModal = () => {
+        setSubmitModal(false);
+    }
+
+    const handleSetStatusModal = () => {
+        setStatusModal(prevState => !prevState);
     }
 
     const handleDateClick = (value) => {
-        // Normalize date to midnight and format as YYYY-MM-DD using moment
+
         const dateStr = moment(value).startOf('day').format('YYYY-MM-DD');
-        setUnavailableDates((prev) => {
+        setCounselorDisabledDate((prev) => {
           const dateExists = prev.includes(dateStr);
           const updatedDates = dateExists
-            ? prev.filter((d) => d !== dateStr) // Remove the date if it already exists
-            : [...prev, dateStr]; // Add the date if it doesn't exist
+            ? prev.filter((d) => d !== dateStr)
+            : [...prev, dateStr];
     
           console.log('Clicked date:', dateStr);
-          console.log('Updated unavailable dates:', updatedDates); // Log the updated array
+          console.log('Updated unavailable dates:', updatedDates);
           return updatedDates;
         });
       };
@@ -525,15 +523,13 @@ const ManageCounseling = () => {
         transition: Bounce,
         });
   
-    
-      
-
     return (
         <Sidebar>
             <ToastContainer/>
             <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
                 <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
                     <h2 className="text-3xl font-bold text-blue-950 text-center">Guidance Counseling</h2>
+                    <p>id{currentUser.id}</p>
                 </div>
 
                 <div className="p-5">
@@ -754,8 +750,6 @@ const ManageCounseling = () => {
                                     </div>
                                 </div>
                             </div>
-
-
                         </div>
                     </div>
                 </div>
@@ -771,11 +765,12 @@ const ManageCounseling = () => {
                             onChange={setUnDate}
                             value={unDate}
                             tileClassName={({ date }) =>
-                            unavailableDates.includes(moment(date).startOf('day').format('YYYY-MM-DD'))
+                            counselorDisabledDate.includes(moment(date).startOf('day').format('YYYY-MM-DD'))
                                 ? 'unavailable'
                                 : null
                             }
                             onClickDay={handleDateClick}
+                            tileDisabled={({ date }) => isWeekend(date)}
                             className=""
                         />
                         <style>
@@ -793,7 +788,7 @@ const ManageCounseling = () => {
                         whileHover={{scale: 1.03}}
                         whileTap={{scale: 0.95}}
                         
-                        onClick={handleSubmitModal}
+                        onClick={handleCancelModal}
                         className="mr-2 px-4 py-2 bg-gray-400 text-white font-semibold rounded hover:bg-gray-500 w-full"
                         >
                         Cancel
@@ -802,7 +797,7 @@ const ManageCounseling = () => {
                         <motion.button
                         whileHover={{scale: 1.03}}
                         whileTap={{scale: 0.95}}
-                        onClick={handleSubmitUnavailableSchedule}
+                        onClick={updateUnavailableDates}
                         className={`px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc] ${
                             disabledButton
                               ? "bg-gray-400 cursor-not-allowed"
@@ -815,6 +810,36 @@ const ManageCounseling = () => {
                     </div>
 
                 </div>
+            </Modal>
+
+            <Modal isOpen={statusModal} onClose={handleSetStatusModal}>
+                <p>for selection</p>
+
+                <div className="mt-6 flex justify-around">
+                        <motion.button
+                        whileHover={{scale: 1.03}}
+                        whileTap={{scale: 0.95}}
+                        
+                        onClick={handleSetStatusModal}
+                        className="mr-2 px-4 py-2 bg-gray-400 text-white font-semibold rounded hover:bg-gray-500 w-full"
+                        >
+                        Cancel
+                        </motion.button>
+
+                        <motion.button
+                        whileHover={{scale: 1.03}}
+                        whileTap={{scale: 0.95}}
+                        onClick={''}
+                        className={`px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc] ${
+                            disabledButton
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-[#ffd1dc]"
+                          }`}
+                        disabled={disabledButton}
+                        >
+                        Submit
+                        </motion.button>
+                    </div>
             </Modal>
 
             <Modal>
