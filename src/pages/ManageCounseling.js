@@ -13,6 +13,7 @@ import Modal from '../components/Modal';
 import { motion } from 'framer-motion';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { ThumbsUpIcon, CalendarClock, Pencil } from 'lucide-react';
 
 
 const localizer = momentLocalizer(moment);
@@ -115,32 +116,26 @@ const ManageCounseling = () => {
         if (!currentUser) {
             return;
         }
-
-        console.log("wth")
     
         const usersCollection = collection(db, 'guidanceAppointments');
         const q = query(usersCollection, where('counselorId', '==', currentUser.uid));
     
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const now = new Date();
+            const now = Date.now();
     
             querySnapshot.docs.forEach(doc => {
                 const data = doc.data();
-
-                const start = data.start.seconds * 1000;
                 const end = data.end.seconds * 1000;
-
     
-                if (
-                    end < now.getTime()
-                ) {
-                    console.log("this should run")
+                if (end < now) {
                     if (data.status === "pending") {
-                        updateDoc(doc.ref, { status: "did not respond" });
-                        console.log("did not respond");
+                        updateDoc(doc.ref, { status: "did not respond" })
+                            .then(() => console.log("did not respond"))
+                            .catch(error => console.error("Error updating status:", error));
                     } else if (data.status === "approved") {
-                        updateDoc(doc.ref, { status: "finished" });
-                        console.log("finished");
+                        updateDoc(doc.ref, { status: "finished" })
+                            .then(() => console.log("finished"))
+                            .catch(error => console.error("Error updating status:", error));
                     }
                 }
             });
@@ -157,7 +152,8 @@ const ManageCounseling = () => {
         });
     
         return () => unsubscribe();
-    }, [currentUser.uid]);
+    }, [currentUser]);
+    
     
 
     // unavailableCOunselor dates
@@ -532,8 +528,7 @@ const ManageCounseling = () => {
             <ToastContainer/>
             <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
                 <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
-                    <h2 className="text-3xl font-bold text-blue-950 text-center">Guidance Counseling</h2>
-                    <p>id{currentUser.id}</p>
+                    <h2 className="text-3xl font-bold text-blue-950 text-center">Manage Counseling</h2>
                 </div>
 
                 <div className="p-5">
@@ -629,7 +624,7 @@ const ManageCounseling = () => {
                              whileHover={{scale: 1.03}}
                              whileTap={{scale: 0.95}}
                              className='w-full sm:w-[85%] p-5 bg-[#ffd1dc] text-[#584549] font-semibold rounded' onClick={handleSubmitModal}>
-                                Set Unavailable Dates for Counselors
+                                Set Unavailable Dates
                             </motion.button>
                         </div>
 
@@ -687,17 +682,43 @@ const ManageCounseling = () => {
                                             }
 
                                             return (
-                                                <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base' key={sched.id} style={{ backgroundColor: bgColor }}>
-                                                <p className='sm:text-lg text-sm font-bold '>
-                                                    Student: {sched.fullName} - {sched.gradeLevel} {sched.section}
-                                                </p>
-                                                <p>Status: {sched.status}</p>
-                                                <p>Date: {new Date(sched.start.seconds * 1000).toDateString("en-US")}</p>
-                                                <p>Time: {sched.start && sched.end ? 
-                                                    `${new Date(sched.start.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(sched.end.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
-                                                    : 'N/A'}
-                                                </p>
-                                                <p>{sched.id}</p>
+                                                <div>
+                                                    <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base flex justify-between' key={sched.id} style={{ backgroundColor: bgColor }}>
+                                                        <div>
+                                                            <p className='sm:text-lg text-sm font-bold '>
+                                                                Student: {sched.fullName} - {sched.gradeLevel} {sched.section}
+                                                            </p>
+                                                            <p>Status: {sched.status}</p>
+                                                            <p>Date: {new Date(sched.start.seconds * 1000).toDateString("en-US")}</p>
+                                                            <p>Time: {sched.start && sched.end ? 
+                                                                `${new Date(sched.start.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(sched.end.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                                                : 'N/A'}
+                                                            </p>
+
+                                                        </div>
+
+                                                        {sched.status === 'pending' ? (
+                                                            <div className='flex flex-col gap-2 justify-center'>
+                                                                <div className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                    <ThumbsUpIcon className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
+                                                                </div>
+
+                                                                <div className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                    <CalendarClock className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
+                                                                </div>
+                                                            </div>
+                                                        ) : (sched.status === 'approved' || sched.status === 'rescheduled') ? (
+                                                            <div className='flex flex-col gap-2 justify-center'>
+                                                                <div className='p-3 bg-white hover:bg-gray-400 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                    <Pencil className='sm:w-4 sm:h-4 w-3 h-3 text-black'/>
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+
+
+
+
+                                                    </div>
                                                 </div>
                                             );
                                             })}
@@ -737,16 +758,43 @@ const ManageCounseling = () => {
                                             }
 
                                             return (
-                                                <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base' key={sched.id} style={{ backgroundColor: bgColor }}>
-                                                <p className='sm:text-lg text-sm font-bold '>
-                                                    Student: {sched.fullName} - {sched.gradeLevel} {sched.section}
-                                                </p>
-                                                <p>Status: {sched.status}</p>
-                                                <p>Date: {new Date(sched.start.seconds * 1000).toDateString("en-US")}</p>
-                                                        <p>Time: {sched.start && sched.end ? 
-                                                            `${new Date(sched.start.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(sched.end.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
-                                                            : 'N/A'}
-                                                        </p>
+                                                <div>
+                                                    <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base flex justify-between' key={sched.id} style={{ backgroundColor: bgColor }}>
+                                                        <div>
+                                                            <p className='sm:text-lg text-sm font-bold '>
+                                                                Student: {sched.fullName} - {sched.gradeLevel} {sched.section}
+                                                            </p>
+                                                            <p>Status: {sched.status}</p>
+                                                            <p>Date: {new Date(sched.start.seconds * 1000).toDateString("en-US")}</p>
+                                                            <p>Time: {sched.start && sched.end ? 
+                                                                `${new Date(sched.start.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(sched.end.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                                                : 'N/A'}
+                                                            </p>
+
+                                                        </div>
+
+                                                        {sched.status === 'pending' ? (
+                                                            <div className='flex flex-col gap-2 justify-center'>
+                                                                <div className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                    <ThumbsUpIcon className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
+                                                                </div>
+
+                                                                <div className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                    <CalendarClock className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
+                                                                </div>
+                                                            </div>
+                                                        ) : (sched.status === 'approved' || sched.status === 'rescheduled') ? (
+                                                            <div className='flex flex-col gap-2 justify-center'>
+                                                                <div className='p-3 bg-white hover:bg-gray-400 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                    <Pencil className='sm:w-4 sm:h-4 w-3 h-3 text-black'/>
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+
+
+
+
+                                                    </div>
                                                 </div>
                                             );
                                             })}
