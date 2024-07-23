@@ -76,6 +76,7 @@ const ManageCounseling = () => {
     const [unDate, setUnDate] = useState(new Date());
     const [unavailableDates, setUnavailableDates] = useState([]);
     const [statusModal, setStatusModal] = useState(false);
+    const [initialDates, setInitialDates] = useState([]);
 
     useEffect(() => {
         const fetchCounselors = async () => {
@@ -403,13 +404,14 @@ const ManageCounseling = () => {
             });
       
             alert('Unavailable schedules saved successfully!');
+            setDisabledButton(false);
+            setSubmitModal(false);
           } else {
             alert('No matching document found!');
           }
+          
         } catch (error) {
           console.error('Error updating documents: ', error);
-        } finally {
-          setDisabledButton(false);
         }
       };
       
@@ -460,11 +462,13 @@ const ManageCounseling = () => {
     
     const handleSubmitModal = () => {
         setSubmitModal(prevState => !prevState);
-        console.log(counselorDisabledDate)
+        setInitialDates(counselorDisabledDate);
+        console.log(counselorDisabledDate);
     }
 
     const handleCancelModal = () => {
         setSubmitModal(false);
+        setCounselorDisabledDate(initialDates);
     }
 
     const handleSetStatusModal = () => {
