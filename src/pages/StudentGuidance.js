@@ -153,31 +153,34 @@ const StudentGuidance = () => {
         return () => unsubscribe();
     }, [selectedCounselor?.uid]);
 
-    // modify this when guidance side is done
+    // unavailableCounselor dates
+    useEffect(() => {
+        if (!selectedCounselor) {
+          return;
+        }
+      
+        const usersCollection = collection(db, 'users');
+        const q = query(usersCollection, where('uid', '==', selectedCounselor?.uid));
 
-    //disabled date
-    // useEffect(() => {
-    //     if (!selectedCounselor) {
-    //         setCounselorSched([]);
-    //         return;
-    //     }
-    
-    //     const usersCollection = collection(db, 'users');
-    //     const q = query(usersCollection, where('uid', '==', selectedCounselor.uid));
-        
-    //     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    //         const counselorSched = querySnapshot.docs.map(doc => ({
-    //             id: doc.id,
-    //             ...doc.data()
-    //         }));
-            
-    //         setCounselorDisabledDate(counselorSched);
-    //     }, (error) => {
-    //         console.error("Error fetching schedule: ", error);
-    //     });
-    
-    //     return () => unsubscribe();
-    // }, [selectedCounselor?.uid]);
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          if (!querySnapshot.empty) {
+
+            const doc = querySnapshot.docs[0];
+            const data = doc.data();
+
+            const unavailableDates = data.unavailableDates || [];
+            setCounselorDisabledDate(unavailableDates);
+
+          } else {
+            console.log('No matching documents found.');
+            setCounselorDisabledDate([]);
+          }
+        }, (error) => {
+          console.error("Error fetching schedule: ", error);
+        });
+      
+        return () => unsubscribe();
+    }, [selectedCounselor?.uid]);
  
 // student sched fetch and update status if past time
 useEffect(() => {
@@ -193,13 +196,18 @@ useEffect(() => {
 
         querySnapshot.docs.forEach(doc => {
             const data = doc.data();
-            const start = new Date(data.start);
-            const end = new Date(data.end);
+            const end = data.end.seconds * 1000;
 
-            if (data.status === "pending" && start.toDateString() === now.toDateString() && end < now) {
-                updateDoc(doc.ref, { status: "did not respond" });
-            } else if (data.status === "approved" && start.toDateString() === now.toDateString() && end < now) {
-                updateDoc(doc.ref, { status: "finished" });
+            if (end < now) {
+                if (data.status === "pending") {
+                    updateDoc(doc.ref, { status: "did not respond" })
+                        .then(() => console.log("did not respond"))
+                        .catch(error => console.error("Error updating status:", error));
+                } else if (data.status === "approved") {
+                    updateDoc(doc.ref, { status: "finished" })
+                        .then(() => console.log("finished"))
+                        .catch(error => console.error("Error updating status:", error));
+                }
             }
         });
 
@@ -218,23 +226,22 @@ useEffect(() => {
 }, [currentUser?.uid]);
 
     
-  // Filters
-  useEffect(() => {
+    // Filters
+    useEffect(() => {
     let sched = [...studentSched];
 
-    if (filterStatus !== 'all') {
-        sched = sched.filter(sched => sched.status === filterStatus);
-    }
+        if (filterStatus !== 'all') {
+            sched = sched.filter(sched => sched.status === filterStatus);
+        }
 
-    setFilteredStudentSched(sched);
-}, [filterStatus, studentSched]);
+        setFilteredStudentSched(sched);
+    }, [filterStatus, studentSched]);
     
 
     const disabledDates = [
-        // replace with data in firebase later
-        new Date(2024, 6, 22),
-        new Date(2024, 6, 24),
+        ...counselorDisabledDate.map(date => new Date(date)),
     ];
+
 
     const isWeekend = (date) => {
         const day = date.getDay();
@@ -372,7 +379,7 @@ useEffect(() => {
 
     }, []);
     
-    // delete mock events later
+    // events
     const events = [
         ...counselorSched.map(appointment => ({
             title: appointment.studentId === currentUser.uid 
@@ -451,11 +458,13 @@ useEffect(() => {
           setSelectedCounselor(null);
           setReason('');
           setSubmitModal(false);
-          setDisabledButton(false);
-
+          
         } catch (error) {
-          console.error("Error submitting schedule:", error);
-          showFailedToast("Error submitting schedule");
+            console.error("Error submitting schedule:", error);
+            showFailedToast("Error submitting schedule");
+        } finally {
+            
+            setDisabledButton(false);
         }
       };
     
@@ -499,9 +508,6 @@ useEffect(() => {
         transition: Bounce,
         });
   
-    
-      
-
     return (
         <SidebarStudent>
             <ToastContainer/>
@@ -709,7 +715,7 @@ useEffect(() => {
                                                 case "approved":
                                                 bgColor = "#C1FFC4";
                                                 break;
-                                                case "reschedule":
+                                                case "rescheduled":
                                                 bgColor = "#FFFCBF";
                                                 break;
                                                 case "finished":

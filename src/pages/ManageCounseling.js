@@ -59,57 +59,29 @@ const ManageCounseling = () => {
     const { currentUser } = useAuth();
     const [view, setView] = useState(Views.MONTH);
     const [date, setDate] = useState(new Date());
-    const [temporaryEvent, setTemporaryEvent] = useState(null);
-    const [counselors, setCounselors] = useState([]);
     const [counselorSched, setCounselorSched] = useState([]);
     const [counselorDisabledDate, setCounselorDisabledDate] = useState([]);
-    const [studentSched, setStudentSched] = useState([]);
     const [filteredStudentSched, setFilteredStudentSched] = useState([]);
     const [filterTodaySched, settFilterTodaySched] = useState([]);
-    const [selectedCounselor, setSelectedCounselor] = useState(null);
-    const [startTime, setStartTime] = useState(null);
-    const [endTime, setEndTime] = useState(null);
-    const [studentData, setStudentData] = useState(null);
     const [submitModal, setSubmitModal] = useState(false);
-    const [reason, setReason] = useState("");
     const [filterStatus, setFilterStatus] = useState('all');
     const [disabledButton, setDisabledButton] = useState(false);
     const [unDate, setUnDate] = useState(new Date());
-    const [unavailableDates, setUnavailableDates] = useState([]);
     const [statusModal, setStatusModal] = useState(false);
+    const [confirmationModal, setConfirmationModal] = useState(false);
+    const [editModal, setEditModal] = useState(false);
     const [initialDates, setInitialDates] = useState([]);
+    const [status, setStatus] = useState(null);
+    const [confirmationData, setConfirmationData] = useState(null);
+    const [message, setMessage] = useState('');
+    const [newMessage, setNewMessage] = useState(confirmationData?.reason || '');
 
     useEffect(() => {
-        const fetchCounselors = async () => {
-            if (!studentData) return;
-    
-            try {
-                const usersCollection = collection(db, 'users');
-                let q = query(usersCollection, where('role', '==', 'Guidance Office'));
-                
-                if (studentData.educationLevel === 'elementary') {
-                    q = query(q, where('educationLevel', '==', 'elementary'));
-                } else if (studentData.educationLevel === 'junior high school' || studentData.educationLevel === 'senior high school') {
-                    q = query(q, where('educationLevel', 'in', ['junior high school', 'senior high school']));
-                } else if (studentData.educationLevel === 'college') {
-                    q = query(q, where('educationLevel', '==', 'college'));
-                }
-    
-                const querySnapshot = await getDocs(q);
-                
-                const usersList = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                
-                setCounselors(usersList);
-            } catch (error) {
-                console.error("Error fetching users: ", error);
-            }
-        };
-    
-        fetchCounselors();
-    }, [studentData]);
+        if (confirmationData?.message) {
+            setNewMessage(confirmationData.message);
+        }
+
+    }, [confirmationData?.reason]);
 
     // student sched fetch and update status if past time
     useEffect(() => {
@@ -154,16 +126,14 @@ const ManageCounseling = () => {
         return () => unsubscribe();
     }, [currentUser]);
     
-    
-
-    // unavailableCOunselor dates
+    // unavailableCounselor dates
     useEffect(() => {
         if (!currentUser) {
           return;
         }
       
         const usersCollection = collection(db, 'users');
-        const q = query(usersCollection, where('uid', '==', "1234567890"));
+        const q = query(usersCollection, where('uid', '==', currentUser.uid));
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
           if (!querySnapshot.empty) {
@@ -174,7 +144,6 @@ const ManageCounseling = () => {
             const unavailableDates = data.unavailableDates || [];
             setCounselorDisabledDate(unavailableDates);
 
-            console.log(unavailableDates);
           } else {
             console.log('No matching documents found.');
             setCounselorDisabledDate([]);
@@ -184,9 +153,99 @@ const ManageCounseling = () => {
         });
       
         return () => unsubscribe();
-      }, [currentUser]);
+    }, [currentUser]);
 
-    
+    //handle appointment
+    const handleAppointment = async (docId, studentId, gStatus, subject) => {
+        setDisabledButton(true);
+        try {
+          const guidanceStatus =
+            gStatus === 'gApproved'
+              ? 'approved'
+              : gStatus === 'gRescheduled'
+              ? 'rescheduled'
+              : null;
+      
+          if (status) {
+
+              const notificationsRef = collection(db, "studentNotification");
+              const docRef = await addDoc(notificationsRef, {
+                isRead: false,
+                notifTimestamp: serverTimestamp(),
+                status: gStatus,
+                studentId: studentId,
+                subject: subject,
+                reason: message,
+            });
+            
+            const notificationId = docRef.id;
+            
+            await updateDoc(doc(db, "guidanceAppointments", docId), {
+              status: guidanceStatus,
+              message: message,
+              notificationId: notificationId,
+            });
+              
+            showSuccessToast("Appointement status sent successfully!");
+          } else {
+            showWarnToast("Invalid Status");
+          }
+
+          setMessage('');
+          setConfirmationModal(false);
+          setStatus(null);
+          setConfirmationData(null);
+          setStatusModal(false);
+        } catch (error) {
+          console.error("Error sending appointment:", error);
+          showFailedToast("Error sending appointment status");
+        } finally {
+            setDisabledButton(false);
+        }
+    };
+
+    //handle edit appointment
+    const handleEditAppointment = async ( notifId, aptId, newStatus ) => {
+        setDisabledButton(true);
+        try {
+          const guidanceStatus =
+            newStatus === 'gApproved'
+              ? 'approved'
+              : newStatus === 'gRescheduled'
+              ? 'rescheduled'
+              : null;
+      
+          if (guidanceStatus) {
+            
+            await updateDoc(doc(db, "guidanceAppointments", aptId), {
+                status: guidanceStatus,
+                message: newMessage
+            });
+
+            await updateDoc(doc(db, "studentNotification", notifId), {
+                status: newStatus,
+                reason: newMessage,
+                isRead: false,
+            });
+              
+            showSuccessToast("Appointment status edited successfully");
+          } else {
+            showWarnToast("Invalid status");
+          }
+
+          setNewMessage('');
+          setEditModal(false);
+          setStatus(null);
+          setConfirmationData(null);
+          setStatusModal(false);
+        } catch (error) {
+          console.error("Error editing appointment:", error);
+          showFailedToast("Error editing appointment status");
+        } finally {
+            setDisabledButton(false);
+        }
+    };
+      
     // Filters
     useEffect(() => {
         let sched = [...counselorSched];
@@ -284,12 +343,6 @@ const ManageCounseling = () => {
     };
 
     const handleSelectSlot = useCallback((slotInfo) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-    
-        const isPastDate = slotInfo.start < today;
-        const isToday = slotInfo.start.toDateString() === today.toDateString();
-        const isPastTime = slotInfo.start < new Date();
     
         if (isWeekend(slotInfo.start)) {
             showWarnToast("Weekends not available");
@@ -303,22 +356,6 @@ const ManageCounseling = () => {
     
         if ((view === Views.DAY) && isOutsideAllowedTime(slotInfo.start, slotInfo.end || new Date(slotInfo.start.getTime() + 60 * 60 * 1000))) {
             showWarnToast("The selected slot is outside of permissible hours");
-            setStartTime(null);
-            setEndTime(null);
-            setTemporaryEvent(null);
-            return;
-        }
-
-        if (isPastDate) {
-            showWarnToast("Scheduling in the past is not allowed");
-            return;
-        }
-    
-        if (isToday && isPastTime) {
-            showWarnToast("Cannot schedule for a past time today");
-            setStartTime(null);
-            setEndTime(null);
-            setTemporaryEvent(null);
             return;
         }
     
@@ -327,139 +364,80 @@ const ManageCounseling = () => {
         }
     
         setDate(slotInfo.start);
-    
-        // const add30Minutes = (date) => {
-        //     return new Date(date.getTime() + 30 * 60 * 1000);
-        // };
-
-        // if (!isOutsideAllowedTime(slotInfo.start, add30Minutes(slotInfo.start))) {
-        //     setTemporaryEvent({
-        //         title: '- You',
-        //         start: slotInfo.start,
-        //         end: add30Minutes(slotInfo.start),
-        //         status: 'display'
-        //     });
-
-        //     setStartTime(slotInfo.start);
-        //     setEndTime(add30Minutes(slotInfo.start));
-    
-        // } else {
-        //     setTemporaryEvent(null);
-
-        // }
 
     }, [view, disabledDates]);
     
     const handleSelectEvent = useCallback((event) => {
-
-
-        if (event.status === 'display') {
-            setTemporaryEvent(null);
-            setStartTime(null);
-            setEndTime(null);
-            return;
-        }
-
-        setDate(event.start);
-        // setView(Views.MONTH);
-
+        const selectedEvent = event;
+    
+        setDate(selectedEvent.start);
+    
         if (view === Views.DAY) {
-            handleSetStatusModal();
+            setConfirmationData(selectedEvent);
+            handleSetStatusModal(selectedEvent);
         } else {
-            setView(Views.DAY)
+            setView(Views.DAY);
         }
+
 
     }, [view]);
     
-    // delete mock events later
+    
+    
+    // events
     const events = [
         ...counselorSched.map(appointment => ({
             title: view === Views.MONTH ? `${appointment.fullName}` : `- ${appointment.fullName} - ${appointment.gradeLevel} ${appointment.section}`, 
             start: appointment.start.toDate(),
             end: appointment.end.toDate(),
-            status: appointment.status
+            status: appointment.status,
+            counselorId: appointment.counselorId,
+            counselorName: appointment.counselorName,
+            department: appointment.department,
+            fullName: appointment.fullName,
+            gradeLevel: appointment.gradeLevel,
+            reason: appointment.reason,
+            section: appointment.section,
+            studentEmail: appointment.studentEmail,
+            studentId: appointment.studentId,
+            message: appointment.message,
+            notificationId: appointment.notificationId,
+            id: appointment.id
         })),
-        temporaryEvent,
     ].filter(event => event);
     
-
+    //edit to real uid
       const updateUnavailableDates = async () => {
         setDisabledButton(true);
       
         try {
           const userRef = collection(db, 'users');
-          const q = query(userRef, where('uid', '==', '1234567890'));
+          const q = query(userRef, where('uid', '==', currentUser.uid));
 
           const querySnapshot = await getDocs(q);
       
           if (!querySnapshot.empty) {
             const docSnapshot = querySnapshot.docs[0];
-            const docRef = doc(db, 'users', docSnapshot.id); // Ensure you use the correct collection name
+            const docRef = doc(db, 'users', docSnapshot.id);
             await updateDoc(docRef, {
               unavailableDates: counselorDisabledDate,
             });
       
-            alert('Unavailable schedules saved successfully!');
-            setDisabledButton(false);
+            showSuccessToast('Unavailable schedules saved successfully!');
             setSubmitModal(false);
-          } else {
-            alert('No matching document found!');
           }
           
         } catch (error) {
           console.error('Error updating documents: ', error);
+          showFailedToast("Error saving unavailable schedules");
+        } finally {
+            setDisabledButton(false);
         }
       };
-      
-
-    // const handleSubmitSchedule = async () => {
-    //     setDisabledButton(true);
-    //     try {
-    //       await addDoc(collection(db, 'guidanceAppointments'), {
-    //         start: new Date(startTime),
-    //         end: new Date(endTime),
-    //         reason: "reason",
-    //         counselorName: selectedCounselor.counselorName,
-    //         status: "pending",
-    //         studentId: currentUser.uid,
-    //         counselorId: selectedCounselor.uid,
-    //         section: studentData.section,
-    //         department: studentData.department,
-    //         gradeLevel: studentData.gradeLevel,
-    //         fullName: studentData.fullName,
-    //         studentEmail: studentData.email,
-    //         reason: reason,
-    //         timestamp: serverTimestamp(),
-    //       });
-    //       showSuccessToast("Schedule submitted successfully");
-
-    //       // Add to activityLog collection
-    //       const activityLogRef = collection(db, "activityLog");
-    //       await addDoc(activityLogRef, {
-    //           date: serverTimestamp(),
-    //           subject: selectedCounselor.counselorName,
-    //           type: 'counseling',
-    //           studentId: currentUser.uid
-    //       });
-
-    //       setTemporaryEvent(null);
-    //       setStartTime(null);
-    //       setEndTime(null);
-    //       setSelectedCounselor(null);
-    //       setReason('');
-    //       setSubmitModal(false);
-    //       setDisabledButton(false);
-
-    //     } catch (error) {
-    //       console.error("Error submitting schedule:", error);
-    //       showFailedToast("Error submitting schedule");
-    //     }
-    //   };
     
     const handleSubmitModal = () => {
         setSubmitModal(prevState => !prevState);
         setInitialDates(counselorDisabledDate);
-        console.log(counselorDisabledDate);
     }
 
     const handleCancelModal = () => {
@@ -467,8 +445,36 @@ const ManageCounseling = () => {
         setCounselorDisabledDate(initialDates);
     }
 
-    const handleSetStatusModal = () => {
+    const handleSetStatusModal = (data) => {
         setStatusModal(prevState => !prevState);
+        setConfirmationData(data);
+    }
+
+    const handleSetStatusModalCancel = () => {
+        setStatusModal(prevState => !prevState);
+        setConfirmationData(null);
+    }
+
+    const handleConfirmationModal = (sched, status) => {
+        setConfirmationModal(prevState => !prevState);
+        setConfirmationData(sched);
+        setStatus(status);
+    }
+
+    const handleEditModal = (data) => {
+        setEditModal(prevState => !prevState);
+        setConfirmationData(data);
+    }
+
+    const handleEditModalCancel = () => {
+        setEditModal(prevState => !prevState);
+        setConfirmationData(null);
+        setStatusModal(false);
+    }
+
+    const handleConfirmationModalCancel = () => {
+        setConfirmationModal(prevState => !prevState);
+        setConfirmationData(null);
     }
 
     const handleDateClick = (value) => {
@@ -479,9 +485,7 @@ const ManageCounseling = () => {
           const updatedDates = dateExists
             ? prev.filter((d) => d !== dateStr)
             : [...prev, dateStr];
-    
-          console.log('Clicked date:', dateStr);
-          console.log('Updated unavailable dates:', updatedDates);
+            
           return updatedDates;
         });
       };
@@ -609,11 +613,6 @@ const ManageCounseling = () => {
                                 onNavigate={(newDate) => setDate(newDate)}
                                 onView={(newView) => {
                                     setView(newView);
-                                    if (newView !== Views.DAY) {
-                                        setTemporaryEvent(null);
-                                        setStartTime(null);
-                                        setEndTime(null);
-                                    }
                                 }}
                                 slotPropGetter={slotPropGetter}
                             />
@@ -668,7 +667,7 @@ const ManageCounseling = () => {
                                                 case "approved":
                                                 bgColor = "#C1FFC4";
                                                 break;
-                                                case "reschedule":
+                                                case "rescheduled":
                                                 bgColor = "#FFFCBF";
                                                 break;
                                                 case "finished":
@@ -682,7 +681,6 @@ const ManageCounseling = () => {
                                             }
 
                                             return (
-                                                <div>
                                                     <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base flex justify-between' key={sched.id} style={{ backgroundColor: bgColor }}>
                                                         <div>
                                                             <p className='sm:text-lg text-sm font-bold '>
@@ -699,19 +697,28 @@ const ManageCounseling = () => {
 
                                                         {sched.status === 'pending' ? (
                                                             <div className='flex flex-col gap-2 justify-center'>
-                                                                <div className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                <motion.button 
+                                                                whileHover={{ scale: 1.03 }}
+                                                                whileTap={{ scale: 0.95 }}
+                                                                className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleConfirmationModal(sched, 'gApproved')}>
                                                                     <ThumbsUpIcon className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
-                                                                </div>
+                                                                </motion.button>
 
-                                                                <div className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                <motion.button 
+                                                                whileHover={{ scale: 1.03 }}
+                                                                whileTap={{ scale: 0.95 }}
+                                                                className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleConfirmationModal(sched, 'gRescheduled')}>
                                                                     <CalendarClock className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
-                                                                </div>
+                                                                </motion.button>
                                                             </div>
                                                         ) : (sched.status === 'approved' || sched.status === 'rescheduled') ? (
                                                             <div className='flex flex-col gap-2 justify-center'>
-                                                                <div className='p-3 bg-white hover:bg-gray-400 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                <motion.button 
+                                                                whileHover={{ scale: 1.03 }}
+                                                                whileTap={{ scale: 0.95 }}    
+                                                                className='p-3 bg-white hover:bg-gray-300 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleEditModal(sched)}>
                                                                     <Pencil className='sm:w-4 sm:h-4 w-3 h-3 text-black'/>
-                                                                </div>
+                                                                </motion.button>
                                                             </div>
                                                         ) : null}
 
@@ -719,7 +726,6 @@ const ManageCounseling = () => {
 
 
                                                     </div>
-                                                </div>
                                             );
                                             })}
 
@@ -744,7 +750,7 @@ const ManageCounseling = () => {
                                                 case "approved":
                                                 bgColor = "#C1FFC4";
                                                 break;
-                                                case "reschedule":
+                                                case "rescheduled":
                                                 bgColor = "#FFFCBF";
                                                 break;
                                                 case "finished":
@@ -758,7 +764,6 @@ const ManageCounseling = () => {
                                             }
 
                                             return (
-                                                <div>
                                                     <div className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base flex justify-between' key={sched.id} style={{ backgroundColor: bgColor }}>
                                                         <div>
                                                             <p className='sm:text-lg text-sm font-bold '>
@@ -775,27 +780,33 @@ const ManageCounseling = () => {
 
                                                         {sched.status === 'pending' ? (
                                                             <div className='flex flex-col gap-2 justify-center'>
-                                                                <div className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                <motion.button 
+                                                                whileHover={{ scale: 1.03 }}
+                                                                whileTap={{ scale: 0.95 }}
+                                                                className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleConfirmationModal(sched, 'gApproved')}>
                                                                     <ThumbsUpIcon className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
-                                                                </div>
+                                                                </motion.button>
 
-                                                                <div className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                <motion.button 
+                                                                whileHover={{ scale: 1.03 }}
+                                                                whileTap={{ scale: 0.95 }}
+                                                                className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleConfirmationModal(sched, 'gRescheduled')}>
                                                                     <CalendarClock className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
-                                                                </div>
+                                                                </motion.button>
                                                             </div>
                                                         ) : (sched.status === 'approved' || sched.status === 'rescheduled') ? (
                                                             <div className='flex flex-col gap-2 justify-center'>
-                                                                <div className='p-3 bg-white hover:bg-gray-400 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'>
+                                                                <motion.button 
+                                                                whileHover={{ scale: 1.03 }}
+                                                                whileTap={{ scale: 0.95 }}    
+                                                                className='p-3 bg-white hover:bg-gray-300 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleEditModal(sched)}>
                                                                     <Pencil className='sm:w-4 sm:h-4 w-3 h-3 text-black'/>
-                                                                </div>
+                                                                </motion.button>
                                                             </div>
                                                         ) : null}
 
 
-
-
                                                     </div>
-                                                </div>
                                             );
                                             })}
 
@@ -807,7 +818,7 @@ const ManageCounseling = () => {
                 </div>
             </div>
 
-            <Modal isOpen={submitModal} onClose={handleSubmitModal}>
+            <Modal isOpen={submitModal} onClose={handleCancelModal}>
                 <div className='p-6'>
                     <h3 className="text-lg font-bold mb-4 text-center">
                         Select Unavailable Schedule
@@ -864,41 +875,96 @@ const ManageCounseling = () => {
                 </div>
             </Modal>
 
-            <Modal isOpen={statusModal} onClose={handleSetStatusModal}>
-                <p>for selection</p>
+            <Modal isOpen={statusModal} onClose={handleSetStatusModalCancel}>
+                <div
+                    className='my-3 p-4 rounded-md shadow-md text-xs sm:text-base flex justify-between'
+                    style={{
+                    backgroundColor:
+                        confirmationData?.status === 'pending'
+                        ? '#C8E3FF'
+                        : confirmationData?.status === 'approved'
+                        ? '#C1FFC4'
+                        : confirmationData?.status === 'rescheduled'
+                        ? '#FFFCBF'
+                        : confirmationData?.status === 'finished'
+                        ? '#DDBAFE'
+                        : confirmationData?.status === 'did not respond'
+                        ? '#FFBFBF'
+                        : '#C0C0C0',
+                    }}
+                >
+                    <div>
+                    <p className='sm:text-lg text-sm font-bold'>
+                        Student: {confirmationData?.fullName || 'N/A'} - {confirmationData?.gradeLevel}{' '}
+                        {confirmationData?.section}
+                    </p>
+                    <p>Status: {confirmationData?.status}</p>
+                    {statusModal && (
+                        <>
+                        <p>Date: {confirmationData?.start?.toLocaleDateString()}</p>
+                        <p>
+                            Time: {confirmationData?.start?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
+                            {confirmationData?.end?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        </>
+                    )}
+                    </div>
 
-                <div className="mt-6 flex justify-around">
+                    {confirmationData?.status === 'pending' ? (
+                    <div className='flex flex-col gap-2 justify-center'>
                         <motion.button
-                        whileHover={{scale: 1.03}}
-                        whileTap={{scale: 0.95}}
-                        
-                        onClick={handleSetStatusModal}
-                        className="mr-2 px-4 py-2 bg-gray-400 text-white font-semibold rounded hover:bg-gray-500 w-full"
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.95 }}
+                        className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'
+                        onClick={() => handleAppointment(confirmationData?.id, confirmationData?.studentId, 'gApproved', 'Guidance Counseling')}
                         >
-                        Cancel
+                        <ThumbsUpIcon className='sm:w-4 sm:h-4 w-3 h-3 text-white' />
                         </motion.button>
 
                         <motion.button
-                        whileHover={{scale: 1.03}}
-                        whileTap={{scale: 0.95}}
-                        onClick={''}
-                        className={`px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc] ${
-                            disabledButton
-                              ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-[#ffd1dc]"
-                          }`}
-                        disabled={disabledButton}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.95 }}
+                        className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'
+                        onClick={() => handleAppointment(confirmationData?.id, confirmationData?.studentId, 'gRescheduled', 'Guidance Counseling')}
                         >
-                        Submit
+                        <CalendarClock className='sm:w-4 sm:h-4 w-3 h-3 text-white' />
                         </motion.button>
                     </div>
+                    ) : confirmationData?.status === 'approved' || confirmationData?.status === 'rescheduled' ? (
+                    <div className='flex flex-col gap-2 justify-center'>
+                        <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.95 }}
+                        className='p-3 bg-white hover:bg-gray-300 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer'
+                        onClick={() => handleEditModal(confirmationData)}
+                        >
+                        <Pencil className='sm:w-4 sm:h-4 w-3 h-3 text-black' />
+                        </motion.button>
+                    </div>
+                    ) : null}
+                </div>
+                <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSetStatusModalCancel}
+                    className='mr-2 px-4 py-2 bg-gray-400 text-white font-semibold rounded hover:bg-gray-500 w-full'
+                >
+                    Cancel
+                </motion.button>
             </Modal>
 
-            <Modal>
+            <Modal isOpen={confirmationModal} onClose={handleConfirmationModalCancel}>
                 <div className="p-6">
-                    <h3 className="text-lg font-bold mb-4 text-center">
-                        Approve Coounseling?
-                    </h3>
+                        {status === 'gApproved' ?(
+                            <h3 className="text-lg font-bold mb-4 text-center">
+                                Approve Counseling?
+                            </h3>
+                        ): (status === 'gRescheduled') ? (
+                            <h3 className="text-lg font-bold mb-4 text-center">
+                                Reschedule Counseling?
+                            </h3>
+                        ): null}
+                       
 
                     <div className='border-2 border-blue-50 rounded p-5 bg-blue-200 sm:text-base text-sm'>
                         <p className='font-semibold pb-1'>
@@ -906,29 +972,39 @@ const ManageCounseling = () => {
                         </p>
 
                         <div className='ml-4'>
-                            <p>Counselor: {selectedCounselor?.counselorName}</p>
-                            <p>Name: {studentData?.fullName}</p>
-                            <p>Date: {startTime?.toDateString()}</p>
-                            <p>Time: {startTime && endTime ? 
-                                `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
-                                : ''}
+                            {confirmationData?.department &&(
+                                <p>
+                                    Department: {confirmationData?.department}
+                                </p>
+
+                            )}
+                            <p>Name: {confirmationData?.fullName || 'N/A'} - {confirmationData?.gradeLevel} {confirmationData?.section}</p>
+                            <p>Date: {confirmationData?.start ? new Date(confirmationData.start.seconds * 1000).toDateString("en-US") : 'N/A'}</p>
+                            <p>
+                                Time: {" "}
+                                {confirmationData?.start && confirmationData?.end ? 
+                                `${new Date(confirmationData.start.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(confirmationData.end.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                : 'N/A'}
                             </p>
+                            {confirmationData?.reason &&(
+                                <p>Reason: {confirmationData?.reason}</p>
+                            )}
                         </div>
 
                     </div>
 
                     <div className="mt-4">
                         <label
-                        htmlFor="rejectionReason"
+                        htmlFor="counselorMsg"
                         className="block text-gray-700 mb-1"
                         >
-                        Reason:
+                        Message:
                         </label>
                         <textarea
-                        id="rejectionReason"
-                        value={reason}
-                        placeholder='Optional'
-                        onChange={(e) => setReason(e.target.value)}
+                        id="counselorMsg"
+                        value={message}
+                        placeholder='(Optional)'
+                        onChange={(e) => setMessage(e.target.value)}
                         className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
                         required
                         />
@@ -939,7 +1015,7 @@ const ManageCounseling = () => {
                         whileHover={{scale: 1.03}}
                         whileTap={{scale: 0.95}}
                         
-                        onClick={handleSubmitModal}
+                        onClick={handleConfirmationModalCancel}
                         className="mr-2 px-4 py-2 bg-gray-400 text-white font-semibold rounded hover:bg-gray-500 w-full"
                         >
                         Cancel
@@ -948,7 +1024,7 @@ const ManageCounseling = () => {
                         <motion.button
                         whileHover={{scale: 1.03}}
                         whileTap={{scale: 0.95}}
-                        onClick={() => {console.log("dsd")}}
+                        onClick={() => handleAppointment( confirmationData?.id, confirmationData?.studentId, status, 'Guidance Counseling')}
                         className={`px-4 py-2 rounded  text-[#584549] font-semibold w-full bg-[#ffd1dc] ${
                             disabledButton
                               ? "bg-gray-400 cursor-not-allowed"
@@ -963,8 +1039,123 @@ const ManageCounseling = () => {
 
             </Modal>
 
-            <Modal>
-                <p>Reschedule Counseling?</p>
+            <Modal isOpen={editModal} onClose={handleEditModalCancel}>
+                <div className="p-6">
+
+                    <h3 className="text-lg font-bold mb-4 text-center">
+                        Edit Status?
+                    </h3>
+
+                    <h3 className="text-lg font-bold mb-4 text-center">
+                        Current Status: {" "}
+                            {confirmationData?.status === 'approved' ? (
+                                <span className='text-[#1c9222]'>{confirmationData?.status.toUpperCase()}</span>
+
+                            ):(
+                                <span className='text-[#9c9a1f]'>{confirmationData?.status.toUpperCase()}</span>
+                            )}
+                    </h3>
+
+                       
+
+                    <div className='border-2 border-blue-50 rounded p-5 bg-blue-200 sm:text-base text-sm'>
+                        <p className='font-semibold pb-1'>
+                            Schedule Information:
+                        </p>
+
+                        <div className='ml-4'>
+                            {confirmationData?.department &&(
+                                <p>
+                                    Department: {confirmationData?.department}
+                                </p>
+
+                            )}
+                            <p>Name: {confirmationData?.fullName || 'N/A'} - {confirmationData?.gradeLevel} {confirmationData?.section}</p>
+                            <p>Date: {confirmationData?.start ? new Date(confirmationData.start.seconds * 1000).toDateString("en-US") : 'N/A'}</p>
+                            {statusModal ? (
+                                <>
+                                <p>Date: {confirmationData?.start?.toLocaleDateString()}</p>
+                                <p>
+                                    Time: {confirmationData?.start?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
+                                    {confirmationData?.end?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                                </>
+                            ):(
+
+                                <p>
+                                    Time: 
+                                    {confirmationData?.start && confirmationData?.end ? 
+                                    `${new Date(confirmationData.start.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(confirmationData.end.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                    : 'N/A'}
+                                </p>
+                            )}
+                            
+                            {confirmationData?.reason &&(
+                                <p>Reason: {confirmationData?.reason}</p>
+                            )}
+                        </div>
+
+                    </div>
+
+                    <div className="mt-4">
+                        <label
+                        htmlFor="counselorMsg"
+                        className="block text-gray-700 mb-1"
+                        >
+                        Message:
+                        </label>
+                        <textarea
+                        id="counselorMsg"
+                        value={newMessage}
+                        placeholder='(Optional)'
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                        required
+                        />
+                    </div>
+
+                    <div className="mt-6 flex justify-around gap-2">
+                        <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.95 }}
+                            disabled={confirmationData?.status === 'approved'}
+                            className={`p-3 w-full rounded flex justify-center items-center h-fit ${
+                            confirmationData?.status === 'approved'
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-green-500 hover:bg-green-600 cursor-pointer'
+                            }`}
+                            onClick={() => handleEditAppointment(confirmationData?.notificationId, confirmationData?.id, 'gApproved')}
+                        >
+                            <ThumbsUpIcon className='w-6 h-6 text-white' />
+                        </motion.button>
+
+                        <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.95 }}
+                            disabled={confirmationData?.status === 'rescheduled'}
+                            className={`p-3 w-full rounded flex justify-center items-center h-fit ${
+                            confirmationData?.status === 'rescheduled'
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-red-500 hover:bg-red-700 cursor-pointer'
+                            }`}
+                            onClick={() => handleEditAppointment(confirmationData?.notificationId, confirmationData?.id, 'gRescheduled')}
+                        >
+                            <CalendarClock className='w-6 h-6 text-white' />
+                        </motion.button>
+                    </div>
+
+
+                    <div className="mt-6 flex justify-around">
+                        <motion.button
+                        whileHover={{scale: 1.03}}
+                        whileTap={{scale: 0.95}}
+                        onClick={handleEditModalCancel}
+                        className="mr-2 px-4 py-2 bg-gray-400 text-white font-semibold rounded hover:bg-gray-500 w-full"
+                        >
+                        Cancel
+                        </motion.button>
+                    </div>
+                </div>
 
             </Modal>
 

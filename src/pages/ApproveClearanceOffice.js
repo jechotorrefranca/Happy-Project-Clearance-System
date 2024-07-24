@@ -158,10 +158,10 @@ function ApproveClearanceOffice() {
         subject: subject,
       });
 
-      alert("Clearance approved!");
+      showSuccessToast("Clearance approved!");
     } catch (error) {
       console.error("Error approving clearance:", error);
-      alert("Error approving clearance. Please try again later.");
+      showFailedToast("Error approving clearance. Please try again later");
     }
   };
 
@@ -179,7 +179,7 @@ function ApproveClearanceOffice() {
 
   const handleReject = async () => {
     if (!requestToReject || !rejectionReason) {
-      alert("Please provide a reason for rejection.");
+      showWarningToast("Please provide a reason for rejection");
       return;
     }
 
@@ -205,10 +205,10 @@ function ApproveClearanceOffice() {
       });
 
       closeRejectModal();
-      alert("Clearance request rejected.");
+      showSuccessToast("Clearance request rejected");
     } catch (error) {
       console.error("Error rejecting clearance:", error);
-      alert("Error rejecting clearance. Please try again later.");
+      showFailedToast("Error rejecting clearance. Please try again later");
     }
   };
 
@@ -216,8 +216,45 @@ function ApproveClearanceOffice() {
     setExpandedRequestId((prevId) => (prevId === requestId ? null : requestId));
   };
 
+  const showSuccessToast = (msg) => toast.success(msg, {
+    position: "top-center",
+    autoClose: 2500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    transition: Bounce,
+    });
+
+    const showFailedToast = (msg) => toast.error(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });
+
+    const showWarningToast = (msg) => toast.warn(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+      transition: Bounce,
+      });
+
   return (
     <Sidebar>
+      <ToastContainer/>
       <div className="container mx-auto bg-blue-100 rounded pb-10 min-h-[90vh]">
         <div className="bg-blue-300 p-5 rounded flex justify-center items-center mb-10">
           <h2 className="text-3xl font-bold text-blue-950 text-center">Approve Clearance Requests</h2>
