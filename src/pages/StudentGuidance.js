@@ -596,8 +596,6 @@ useEffect(() => {
                                 onNavigate={(newDate) => setDate(newDate)}
                                 onView={(newView) => {
                                     setView(newView);
-                                    console.log(selectedCounselor)
-                                    console.log(counselorDisabledDate)
                                     if (newView !== Views.DAY) {
                                         setTemporaryEvent(null);
                                         setStartTime(null);
