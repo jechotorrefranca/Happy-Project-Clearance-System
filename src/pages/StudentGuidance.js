@@ -156,6 +156,7 @@ const StudentGuidance = () => {
     // unavailableCounselor dates
     useEffect(() => {
         if (!selectedCounselor) {
+          setCounselorDisabledDate([]);
           return;
         }
       
@@ -418,9 +419,10 @@ useEffect(() => {
 
     const handleCounselorChange = (e) => {
         const counselorId = e.target.value;
-        const selected = counselors.find(counselor => counselor.id === counselorId);
+        const selected = counselors.find(counselor => counselor.id === counselorId) || null;
         setSelectedCounselor(selected);
     };
+    
 
     const handleSubmitSchedule = async () => {
         setDisabledButton(true);
@@ -594,6 +596,8 @@ useEffect(() => {
                                 onNavigate={(newDate) => setDate(newDate)}
                                 onView={(newView) => {
                                     setView(newView);
+                                    console.log(selectedCounselor)
+                                    console.log(counselorDisabledDate)
                                     if (newView !== Views.DAY) {
                                         setTemporaryEvent(null);
                                         setStartTime(null);
