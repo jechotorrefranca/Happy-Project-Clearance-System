@@ -34,7 +34,7 @@ function GuidanceReports() {
     fetchLogs();
   }, []);
 
-  // Filter Reports
+  // Filter Reports 
   useEffect(() => {
     let filteredLogs = [...originalLogs];
 
