@@ -142,7 +142,7 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 bg-opacity-50" style={{ backgroundImage: "url('https://scontent.fcrk3-2.fna.fbcdn.net/v/t1.6435-9/118802707_4386688541373004_6769550702385255298_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=13d280&_nc_eui2=AeF-UhkeyDDV_sdJ3IGn9Z31duFTBENvhZR24VMEQ2-FlG4q2lIMBjkQuyxWsF0zyP27PjYXLTna5IE5QuYrh9tU&_nc_ohc=Qr-BScnppdYQ7kNvgEqtQig&_nc_ht=scontent.fcrk3-2.fna&oh=00_AYDj0EUB-w8R94RVxK3ToUlIlxjqJUZ-1Rs9cHbLb5VTxQ&oe=66A3743D')", backgroundSize: "cover", backgroundRepeat: "no-repeat", backgroundPosition: "center" }}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 bg-opacity-50" style={{ backgroundImage: "url('/dyciSIbg.jpg')", backgroundSize: "cover", backgroundRepeat: "no-repeat", backgroundPosition: "center" }}>
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

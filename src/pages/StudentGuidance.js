@@ -151,7 +151,7 @@ const StudentGuidance = () => {
         });
     
         return () => unsubscribe();
-    }, [selectedCounselor?.uid]);
+    }, [selectedCounselor]);
 
     // unavailableCounselor dates
     useEffect(() => {
@@ -181,7 +181,7 @@ const StudentGuidance = () => {
         });
       
         return () => unsubscribe();
-    }, [selectedCounselor?.uid]);
+    }, [selectedCounselor]);
  
 // student sched fetch and update status if past time
 useEffect(() => {
@@ -224,7 +224,7 @@ useEffect(() => {
     });
 
     return () => unsubscribe();
-}, [currentUser?.uid]);
+}, [currentUser]);
 
     
     // Filters
@@ -366,7 +366,7 @@ useEffect(() => {
             setTemporaryEvent(null);
 
         }
-    }, [view, disabledDates]);
+    }, [view, disabledDates, isWeekend, isDisabledDate, isOutsideAllowedTime, showWarnToast, setView, setDate, setStartTime, setEndTime, setTemporaryEvent]);
     
     const handleSelectEvent = useCallback((event) => {
         if (event.status === 'display') {
