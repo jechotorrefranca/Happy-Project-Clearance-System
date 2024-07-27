@@ -366,7 +366,7 @@ useEffect(() => {
             setTemporaryEvent(null);
 
         }
-    }, [view, disabledDates, isWeekend, isDisabledDate, isOutsideAllowedTime, showWarnToast, setView, setDate, setStartTime, setEndTime, setTemporaryEvent]);
+    }, [view, isWeekend, isDisabledDate, isOutsideAllowedTime]);
     
     const handleSelectEvent = useCallback((event) => {
         if (event.status === 'display') {
