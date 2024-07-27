@@ -16,7 +16,8 @@ import {
   CalendarIcon,
   CreditCardIcon,
   LockClosedIcon,
-  UserIcon
+  UserIcon,
+  DocumentChartBarIcon
 } from '@heroicons/react/24/outline';
 import {
   UserGroupIcon as UserGroupIconSolid
@@ -52,6 +53,11 @@ const navigationOptions = {
       icon: UsersIcon,
     },
     {
+      name: "Guidance Reports",
+      href: "/guidance-reports",
+      icon: DocumentChartBarIcon,
+    },
+    {
       name: "School Events",
       href: "/school-events",
       icon: CalendarIcon,
@@ -80,6 +86,11 @@ const navigationOptions = {
       name: "Student Directory",
       href: "/student-master-list",
       icon: UsersIcon,
+    },
+    {
+      name: "Guidance Reports",
+      href: "/guidance-reports",
+      icon: DocumentChartBarIcon,
     },
     {
       name: "School Events",
@@ -208,6 +219,11 @@ const navigationOptions = {
       name: "Manage Counseling",
       href: "/manage-counseling",
       icon: UserIcon,
+    },
+    {
+      name: "Guidance Reports",
+      href: "/guidance-reports",
+      icon: DocumentChartBarIcon,
     },
     {
       name: "Office Requirements",

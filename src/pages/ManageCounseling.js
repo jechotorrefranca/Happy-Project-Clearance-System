@@ -700,31 +700,30 @@ const ManageCounseling = () => {
                                                                 <motion.button 
                                                                 whileHover={{ scale: 1.03 }}
                                                                 whileTap={{ scale: 0.95 }}
-                                                                className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleConfirmationModal(sched, 'gApproved')}>
+                                                                className='p-3 bg-green-500 hover:bg-green-600 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' 
+                                                                onClick={() => handleConfirmationModal(sched, 'gApproved')}>
                                                                     <ThumbsUpIcon className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
                                                                 </motion.button>
 
                                                                 <motion.button 
                                                                 whileHover={{ scale: 1.03 }}
                                                                 whileTap={{ scale: 0.95 }}
-                                                                className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleConfirmationModal(sched, 'gRescheduled')}>
+                                                                className='p-3 bg-red-500 hover:bg-red-700 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' 
+                                                                onClick={() => handleConfirmationModal(sched, 'gRescheduled')}>
                                                                     <CalendarClock className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
                                                                 </motion.button>
                                                             </div>
-                                                        ) : (sched.status === 'approved' || sched.status === 'rescheduled') ? (
+                                                        ) : (sched.status === 'approved' || sched.status === 'rescheduled') && new Date() <= new Date(sched.end.seconds * 1000) ? (
                                                             <div className='flex flex-col gap-2 justify-center'>
                                                                 <motion.button 
                                                                 whileHover={{ scale: 1.03 }}
                                                                 whileTap={{ scale: 0.95 }}    
-                                                                className='p-3 bg-white hover:bg-gray-300 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' onClick={() => handleEditModal(sched)}>
+                                                                className='p-3 bg-white hover:bg-gray-300 rounded-full flex justify-center items-center h-fit w-fit hover:cursor-pointer' 
+                                                                onClick={() => handleEditModal(sched)}>
                                                                     <Pencil className='sm:w-4 sm:h-4 w-3 h-3 text-black'/>
                                                                 </motion.button>
                                                             </div>
                                                         ) : null}
-
-
-
-
                                                     </div>
                                             );
                                             })}
@@ -794,7 +793,7 @@ const ManageCounseling = () => {
                                                                     <CalendarClock className='sm:w-4 sm:h-4 w-3 h-3 text-white'/>
                                                                 </motion.button>
                                                             </div>
-                                                        ) : (sched.status === 'approved' || sched.status === 'rescheduled') ? (
+                                                        ) : (sched.status === 'approved' || sched.status === 'rescheduled') && new Date() <= new Date(sched.end.seconds * 1000) ? (
                                                             <div className='flex flex-col gap-2 justify-center'>
                                                                 <motion.button 
                                                                 whileHover={{ scale: 1.03 }}
@@ -930,7 +929,7 @@ const ManageCounseling = () => {
                         <CalendarClock className='sm:w-4 sm:h-4 w-3 h-3 text-white' />
                         </motion.button>
                     </div>
-                    ) : confirmationData?.status === 'approved' || confirmationData?.status === 'rescheduled' ? (
+                    ) : (confirmationData?.status === 'approved' || confirmationData?.status === 'rescheduled') && new Date() <= confirmationData?.end ? (
                     <div className='flex flex-col gap-2 justify-center'>
                         <motion.button
                         whileHover={{ scale: 1.03 }}

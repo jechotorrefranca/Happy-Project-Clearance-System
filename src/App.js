@@ -42,6 +42,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import ChangePassword from "./pages/ChangePassword";
 import StudentGuidance from "./pages/StudentGuidance";
 import ManageCounseling from "./pages/ManageCounseling";
+import GuidanceReports from "./pages/GuidanceReports";
 
 
 const router = createBrowserRouter([
@@ -258,6 +259,12 @@ const router = createBrowserRouter([
     path: "/manage-counseling", 
     element: <RoleBasedRoute allowedRoles={['Guidance Office']}>
       <ManageCounseling />
+    </RoleBasedRoute> 
+  },
+  { 
+    path: "/guidance-reports", 
+    element: <RoleBasedRoute allowedRoles={['Guidance Office', 'admin', 'super-admin']}>
+      <GuidanceReports />
     </RoleBasedRoute> 
   },
 ]);
