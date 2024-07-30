@@ -439,6 +439,7 @@ useEffect(() => {
             department: studentData.department,
             gradeLevel: studentData.gradeLevel,
             fullName: studentData.fullName,
+            studentNo: studentData.studentId,
             studentEmail: studentData.email,
             reason: reason,
             timestamp: serverTimestamp(),
@@ -770,6 +771,7 @@ useEffect(() => {
 
                         <div className='ml-4'>
                             <p>Counselor: {selectedCounselor?.counselorName}</p>
+                            <p>Student Number: {studentData?.studentId}</p>
                             <p>Name: {studentData?.fullName}</p>
                             <p>Date: {startTime?.toDateString()}</p>
                             <p>Time: {startTime && endTime ? 
