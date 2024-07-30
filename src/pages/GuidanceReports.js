@@ -316,14 +316,14 @@ function GuidanceReports() {
               <table className="min-w-full bg-white border border-gray-200">
                 <thead>
                   <tr>
-                    <th className="py-3 px-4 border-b border-blue-300 bg-blue-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Appointment Date
-                      <button
-                        onClick={toggleSortOrder}
-                        className="ml-2 text-blue-600 hover:text-blue-800"
-                      >
-                        {sortOrder === "desc" ? "↓" : "↑"}
+                    <th className="py-3 px-4 border-b border-blue-300 bg-blue-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
+                      <button className="flex text-left text-gray-500 hover:text-gray-800 items-center gap-2" onClick={toggleSortOrder}>
+                        <span>APPOINTMENT DATE</span>
+                        <div className="text-lg">
+                          {sortOrder === "desc" ? "↓" : "↑"}
+                        </div>
                       </button>
+                      
                     </th>
                     <th className="py-3 px-4 border-b border-blue-300 bg-blue-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student No.</th>
                     <th className="py-3 px-4 border-b border-blue-300 bg-blue-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
