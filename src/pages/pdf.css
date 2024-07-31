@@ -23,11 +23,14 @@
   .header {
     background-color: rgb(190, 190, 190);
     color: black;
+    border: 1px;
+    border-color: "#9ca3af";
+    border-bottom-color: "#9ca3af";
+    font-size: x-small;
   }
 
   .row {
     background-color: white;
+    font-size: x-small;
   }
-
-
 }
