@@ -8,7 +8,6 @@ import {
   updateDoc,
   addDoc,
   serverTimestamp,
-  orderBy,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useAuth } from "../components/AuthContext";
@@ -27,7 +26,7 @@ import { ToastContainer, toast, Bounce } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function ApproveClearanceOffice() {
-  const { currentUser } = useAuth();
+  const { currentUser, userRole } = useAuth();
   const [clearanceRequests, setClearanceRequests] = useState([]);
   const [originalRequests, setOriginalRequests] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,7 +37,6 @@ function ApproveClearanceOffice() {
   const [availableSections, setAvailableSections] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
-
   const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
@@ -67,10 +65,34 @@ function ApproveClearanceOffice() {
               (recordDoc) => recordDoc.data()
             );
 
+            let eventsAttended = 0;
+            if (userRole === "Office of The Dean") {
+              const eventsRef = collection(db, "events");
+              const eventsSnapshot = await getDocs(eventsRef);
+              eventsSnapshot.forEach((eventDoc) => {
+                const eventData = eventDoc.data();
+                const attendeesArray = Object.values(eventData.attendees);
+                if (
+                  attendeesArray.some(
+                    (attendee) => attendee.studentNo === requestData.studentNo
+                  )
+                ) {
+                  eventsAttended++;
+                }
+              });
+            }
+
+            let disciplinaryRecordsCount = 0;
+            if (userRole === "Character Renewal Office") {
+              disciplinaryRecordsCount = disciplinaryRecords.length;
+            }
+
             return {
               id: doc.id,
               ...requestData,
               disciplinaryRecords,
+              eventsAttended,
+              disciplinaryRecordsCount,
             };
           })
         );
@@ -123,10 +145,6 @@ function ApproveClearanceOffice() {
       await updateDoc(doc(db, "clearanceRequests", requestId), {
         status: "approved",
       });
-
-      // await updateDoc(doc(db, "students", studentId), {
-      //   [`clearance.${subject}`]: true,
-      // });
 
       const studentsRef = collection(db, "students");
       const q = query(studentsRef, where("uid", "==", studentId));
@@ -314,64 +332,50 @@ function ApproveClearanceOffice() {
             </div>
 
             <div className="w-full overflow-auto">
-              {clearanceRequests.length === 0 ? (
-                <p>No clearance requests found.</p>
-              ) : (
-                <table className="min-w-full bg-white border border-gray-200">
-                  <thead>
-                    <tr className="bg-blue-300">
-                      <th className="py-3 px-2 border border-gray-400">Student ID</th>
-                      <th className="py-3 px-2 border border-gray-400">Student Name</th>
-                      <th className="py-3 px-2 border border-gray-400">Office</th>
-                      <th className="py-3 px-2 border border-gray-400">Section</th>
-                      <th className="py-3 px-2 border border-gray-400">Status</th>
-                      <th className="py-3 px-2 border border-gray-400">
-                        Disciplinary Records
-                      </th>
-                      <th className="py-3 px-2 border border-gray-400">Files</th>
-                      <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]">Actions</th>
-                      <th className="py-3 px-2 border border-gray-400 text-center bg-[#fff2c1]"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clearanceRequests.map((request) => (
-                      <React.Fragment key={request.id}>
-                        <tr
-                          key={request.id}
-                          onClick={() => handleExpandRow(request.id)}
-                          className="custom-row cursor-pointer bg-blue-100 hover:bg-blue-200"
-                        >
-                          <td className="border border-gray-400 px-4 py-2">{request.studentNo}</td>
-                          <td className="border border-gray-400 px-4 py-2">{request.studentName}</td>
-                          <td className="border border-gray-400 px-4 py-2">{request.subject}</td>
-                          <td className="border border-gray-400 px-4 py-2">{request.section}</td>
-                          <td className="border border-gray-400 px-4 py-2">{request.status}</td>
-                          <td className="border border-gray-400 px-4 py-2">
-                            {request.disciplinaryRecords.length}
+              <table className="min-w-full bg-white border border-gray-300">
+                <thead>
+                  <tr className="bg-blue-300">
+                    <th className="py-3 px-2 border border-gray-300">Student Name</th>
+                    <th className="py-3 px-2 border border-gray-300">Section</th>
+                    <th className="py-3 px-2 border border-gray-300">Subject</th>
+                    <th className="py-3 px-2 border border-gray-300">Date Submitted</th>
+                    <th className="py-3 px-2 border border-gray-300">Status</th>
+                    {userRole === "Character Renewal Office" && (
+                      <th className="py-3 px-2 border border-gray-300">Disciplinary Records</th>
+                    )}
+                    {userRole === "Office of The Dean" && (
+                      <th className="py-3 px-2 border border-gray-300">Events Attended</th>
+                    )}
+                    <th className="py-3 px-2 border border-gray-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clearanceRequests.map((request) => (
+                    <React.Fragment key={request.id}>
+                      <tr onClick={() => handleExpandRow(request.id)} 
+                      className="custom-row cursor-pointer bg-blue-100 hover:bg-blue-200">
+                        <td className="border border-gray-300 px-4 py-2">{request.studentName}</td>
+                        <td className="border border-gray-300 px-4 py-2">{request.section}</td>
+                        <td className="border border-gray-300 px-4 py-2">{request.subject}</td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {moment(request.timestamp.toDate()).format(
+                            "MMMM Do YYYY, h:mm:ss a"
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">{request.status}</td>
+                        {userRole === ("Character Renewal Office" || "Guidance Office") && (
+                          <td className="border border-gray-300 px-4 py-2">
+                            {request.disciplinaryRecordsCount}
                           </td>
-                          <td className="border border-gray-400 px-4 py-2">
-                            {request.fileURLs && request.fileURLs.length > 0 ? (
-                              <ul>
-                                {request.fileURLs.map((url, index) => (
-                                  <li key={index}>
-                                    <a
-                                      href={url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-500 hover:underline"
-                                    >
-                                      File {index + 1}
-                                    </a>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              "No files submitted"
-                            )}
+                        )}
+                        {userRole === "Office of The Dean" && (
+                          <td className="border border-gray-300 px-4 py-2">
+                            {request.eventsAttended}
                           </td>
-                          <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
-                            {request.status === "pending" && (
-                              <>
+                        )}
+                        <td className="border border-gray-300 px-4 py-2">
+                          {request.status === "pending" && (
+                            <>
                               <div className="gap-2 flex flex-wrap justify-center">
                                 <motion.button
                                   whileHover={{scale: 1.03}}
@@ -397,77 +401,51 @@ function ApproveClearanceOffice() {
                                 </motion.button>
 
                               </div>
-                              </>
-                            )}
-                          </td>
-                          <td className="custom-cell border border-gray-400 px-4 py-2 text-center">
-                            <FontAwesomeIcon
-                              icon={
-                                expandedRequestId === request.id
-                                  ? faAngleUp
-                                  : faAngleDown
-                              }
-                            />
+                            </>
+                          )}
+                        </td>
+                      </tr>
+
+                      {((expandedRequestId === request.id) && (userRole === "Character Renewal Office" || userRole === "Guidance Office")) &&(
+                        <tr className="bg-red-100">
+                          <td colSpan="7" className="border px-4 py-2">
+                            <div className="p-4">
+                              {request.disciplinaryRecords.length > 0 ? (
+                                <>
+                                  <div className="flex justify-center p-3 rounded bg-red-300 mb-2">
+                                    <h3 className="text-lg font-semibold text-red-950 mb-2">
+                                      Disciplinary Records
+                                    </h3>
+
+                                  </div>
+                                    <ul>
+                                      {request.disciplinaryRecords.map((record, index) => (
+                                        <li key={index} className="mb-2">
+                                          <div className="p-2 px-4 rounded bg-red-200">
+                                            <strong>Violation:</strong> {record.violations.join(", ")}
+                                            <br />
+                                            <strong>Date:</strong>{" "}
+                                            {moment(record.date, "YYYY-MM-DD").format("MMMM DD, YYYY")}
+                                            <br />
+                                            <strong>Description:</strong> {record.sanctions.join(", ")}
+
+                                          </div>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                </>
+                              ) : (
+                                <p>No disciplinary records found.</p>
+                              )}
+                            </div>
                           </td>
                         </tr>
-
-                        {expandedRequestId === request.id && (
-                          <tr className="bg-red-100">
-                            <td colSpan={9} className="border px-4 py-2">
-                              {request.disciplinaryRecords.length === 0 ? (
-                                <p>No disciplinary records found.</p>
-                              ) : (
-                                <div className="p-5">
-                                  <h4 className="font-bold mb-2 text-center bg-red-200 p-3 text-red-950">
-                                    Disciplinary Records:
-                                  </h4>
-                                  <table className="min-w-full">
-                                    <thead>
-                                      <tr className="bg-red-300">
-                                        <th className="py-2 border border-gray-400">
-                                          Date
-                                        </th>
-                                        <th className="py-2 border border-gray-400">
-                                          Violations
-                                        </th>
-                                        <th className="py-2 border border-gray-400">
-                                          Sanctions
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {request.disciplinaryRecords.map((record) => (
-                                        <tr key={record.timestamp}>
-                                          <td className="border border-gray-400 px-4 py-2">
-                                            {moment(record.timestamp.toDate()).format(
-                                              "YYYY-MM-DD"
-                                            )}
-                                          </td>
-                                          <td className="border border-gray-400 px-4 py-2">
-                                            {record.violations.join(", ")}
-                                          </td>
-                                          <td className="border border-gray-400 px-4 py-2">
-                                            {record.sanctions.join(", ")}
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-
           </div>
         </div>
 
