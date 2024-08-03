@@ -6,6 +6,7 @@ import moment from "moment";
 import { motion } from 'framer-motion';
 import ReactToPrint from "react-to-print";
 import ExcelJS from 'exceljs';
+import Modal from "../components/Modal";
 
 function GuidanceReports() {
   const [sched, setSched] = useState([]);
@@ -24,7 +25,10 @@ function GuidanceReports() {
   const [availableDepartment, setAvailableDepartment] = useState([]);
   const [availableGradeLevel, setAvailableGradeLevel] = useState([]);
   const [availableSection, setAvailableSection] = useState([]);
+  const [modal, setModal] = useState(false);
+  const [disabledButton, setDisabledButton] = useState("page");
   const componentRef = useRef(null);
+  const reactToPrintRef = useRef();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -214,12 +218,36 @@ function GuidanceReports() {
     setSortOrder(sortOrder === "desc" ? "asc" : "desc");
   };
 
+  // const handlePrint = () => {
+  //   setItemsPerPage(Infinity); // Set itemsPerPage to infinity for printing
+  //   setTimeout(() => {
+  //     window.print(); // Trigger the print dialog
+  //     setItemsPerPage(2); // Restore default itemsPerPage after printing
+  //   }, 0);
+  // };
+
+  const handleModal = () => {
+    setModal(prevState => !prevState);
+}
+
+  const handleChoice = (choice) => {
+    setDisabledButton(choice);
+
+    if (choice === "page") {
+      setItemsPerPage(25);
+
+    } else if (choice === "all") {
+      setItemsPerPage(Infinity);
+    }
+  };
+
   const handlePrint = () => {
-    setItemsPerPage(Infinity); // Set itemsPerPage to infinity for printing
-    setTimeout(() => {
-      window.print(); // Trigger the print dialog
-      setItemsPerPage(2); // Restore default itemsPerPage after printing
-    }, 0);
+    handleModal();
+  };
+
+  const handleAfterPrint = () => {
+    setItemsPerPage(25);
+    setDisabledButton("page")
   };
 
   // const handleExportExcel = async () => {
@@ -483,20 +511,18 @@ function GuidanceReports() {
             </div>
 
             <div className="mb-4 sm:flex justify-around gap-4">
-              <ReactToPrint
-                trigger={() => (
-                  <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
-                    <motion.button
-                      whileHover={{scale: 1.03}}
-                      whileTap={{scale: 0.95}}
-                      className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                      Print Table
-                    </motion.button>
-                    
-                  </div>
-                )}
-                content={() => componentRef.current}
-              />
+
+              <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                <motion.button
+                  onClick={handleModal}
+                  whileHover={{scale: 1.03}}
+                  whileTap={{scale: 0.95}}
+                  className="w-full px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                  Print Table
+                </motion.button>
+                
+              </div>
+
 
               <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
                 <motion.button
@@ -570,6 +596,63 @@ function GuidanceReports() {
           </div>
         </div>
       </div>
+
+      <Modal isOpen={modal} onClose={handleModal}>
+        <div className="p-6">
+            <h3 className="text-lg font-bold mb-4 text-center">
+              Select a Print Option
+            </h3>
+
+            <div className="mt-6 flex justify-around gap-2">
+              <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={disabledButton === 'page'}
+                  className={`p-3 w-full rounded flex justify-center items-center h-fit ${
+                  disabledButton === 'page'
+                      ? 'bg-green-500 hover:bg-green-600 cursor-not-allowed text-green-950 font-semibold'
+                      : 'bg-gray-400 cursor-pointer text-white'
+                  }`}
+                  onClick={() => handleChoice("page")}
+              >
+                  Print Current Page
+              </motion.button>
+
+              <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={disabledButton === 'all'}
+                  className={`p-3 w-full rounded flex justify-center items-center h-fit ${
+                  disabledButton === 'all'
+                      ? 'bg-green-500 hover:bg-green-600 cursor-not-allowed text-green-950 font-semibold'
+                      : 'bg-gray-400 cursor-pointer text-white'
+                  }`}
+                  onClick={() => handleChoice("all")}
+              >
+                  Print All Data
+              </motion.button>
+            </div>
+
+            <ReactToPrint
+              trigger={() => (
+                <motion.button
+                className="p-3 w-full rounded flex justify-center items-center bg-[#C88CFF] hover:bg-[#b17ce2] mt-3"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handlePrint}
+                >
+                  Continue
+                </motion.button>
+              )}
+              content={() => componentRef.current}
+              onBeforeGetContent={handlePrint}
+              onAfterPrint={handleAfterPrint}
+            />
+
+        </div>
+        
+      </Modal>
+
     </Sidebar>
   );
 }
