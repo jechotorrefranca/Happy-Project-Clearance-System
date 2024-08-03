@@ -7,8 +7,12 @@ import { motion } from 'framer-motion';
 import ReactToPrint from "react-to-print";
 import ExcelJS from 'exceljs';
 import Modal from "../components/Modal";
+import { useAuth } from "../components/AuthContext";
+import { saveAs } from 'file-saver';
+import * as XLSX from "xlsx";
 
 function GuidanceReports() {
+  const { currentUser } = useAuth();
   const [sched, setSched] = useState([]);
   const [originalSched, setOriginalSched] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -28,7 +32,6 @@ function GuidanceReports() {
   const [modal, setModal] = useState(false);
   const [disabledButton, setDisabledButton] = useState("page");
   const componentRef = useRef(null);
-  const reactToPrintRef = useRef();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -94,10 +97,6 @@ function GuidanceReports() {
   
     return pages;
   };
-  
-  
-
-
 
   useEffect(() => {
     const fetchSched = async () => {
@@ -218,14 +217,6 @@ function GuidanceReports() {
     setSortOrder(sortOrder === "desc" ? "asc" : "desc");
   };
 
-  // const handlePrint = () => {
-  //   setItemsPerPage(Infinity); // Set itemsPerPage to infinity for printing
-  //   setTimeout(() => {
-  //     window.print(); // Trigger the print dialog
-  //     setItemsPerPage(2); // Restore default itemsPerPage after printing
-  //   }, 0);
-  // };
-
   const handleModal = () => {
     setModal(prevState => !prevState);
 }
@@ -250,97 +241,139 @@ function GuidanceReports() {
     setDisabledButton("page")
   };
 
-  // const handleExportExcel = async () => {
-  //   const workbook = new ExcelJS.Workbook();
-  //   const worksheet = workbook.addWorksheet('Clearance Status');
+  const handleExportExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Guidance Report');
 
-  //   const headerStyle = {
-  //     font: { bold: true },
-  //     fill: {
-  //       type: 'pattern',
-  //       pattern: 'solid',
-  //       fgColor: { argb: 'FFD3D3D3' } 
-  //     },
-  //     border: {
-  //       top: { style: 'thin' },
-  //       left: { style: 'thin' },
-  //       bottom: { style: 'thin' },
-  //       right: { style: 'thin' }
-  //     }
-  //   };
+    const headerStyle = {
+      font: { bold: true },
+      fill: {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD3D3D3' } 
+      },
+      border: {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      }
+    };
 
-  //   const dataCellStyle = {
-  //     border: {
-  //       top: { style: 'thin' },
-  //       left: { style: 'thin' },
-  //       bottom: { style: 'thin' },
-  //       right: { style: 'thin' }
-  //     }
-  //   };
+    const dataCellStyle = {
+      border: {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      }
+    };
 
-  //   const clearedCellStyle = {
-  //     ...dataCellStyle,
-  //     fill: {
-  //       type: 'pattern',
-  //       pattern: 'solid',
-  //       fgColor: { argb: 'FF90EE90' }
-  //     }
-  //   };
+    const pendingCellStyle = {
+      ...dataCellStyle,
+      fill: {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'ff98caff' }
+      }
+    };
 
-  //   const unclearedCellStyle = {
-  //     ...dataCellStyle,
-  //     fill: {
-  //       type: 'pattern',
-  //       pattern: 'solid',
-  //       fgColor: { argb: 'FFFFA07A' } 
-  //     }
-  //   };
+    const approvedCellStyle = {
+      ...dataCellStyle,
+      fill: {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'ff98ff9d' } 
+      }
+    };
 
-  //   worksheet.addRow([`${classData.sectionName} - ${selectedSubject} Clearance Status`]);
-  //   worksheet.mergeCells('A1:C1');
-  //   const titleCell = worksheet.getCell('A1');
-  //   titleCell.font = { size: 16, bold: true, color: { argb: 'FF002060' } };
-  //   titleCell.alignment = { horizontal: 'center' };
+    const rescheduledCellStyle = {
+      ...dataCellStyle,
+      fill: {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'fffffb98' } 
+      }
+    };
 
-  //   const headerRow = worksheet.addRow(['Student ID', 'Name', 'Cleared']);
-  //   headerRow.eachCell((cell) => {
-  //     Object.assign(cell.style, headerStyle);
-  //   });
+    const finishedCellStyle = {
+      ...dataCellStyle,
+      fill: {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'ffc88cff' } 
+      }
+    };
 
-  //   const filteredStudents = getFilteredStudents();
-  //   filteredStudents.forEach((student) => {
-  //     const row = worksheet.addRow([
-  //       student.studentId,
-  //       student.fullName,
-  //       student.clearance[selectedSubject] ? 'Yes' : 'No'
-  //     ]);
+    const dnrCellStyle = {
+      ...dataCellStyle,
+      fill: {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'ffff9898' } 
+      }
+    };
 
-  //     row.eachCell((cell, colNumber) => {
-  //       if (colNumber === 3) { 
-  //         Object.assign(cell.style, student.clearance[selectedSubject] ? clearedCellStyle : unclearedCellStyle);
-  //       } else {
-  //         Object.assign(cell.style, dataCellStyle);
-  //       }
-  //     });
-  //   });
+    worksheet.addRow([`Guidance Reports`]);
+    worksheet.mergeCells('A1:H1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.font = { size: 16, bold: true, color: { argb: 'FF002060' } };
+    titleCell.alignment = { horizontal: 'center' };
 
-  //   worksheet.addRow([]);
+    const headerRow = worksheet.addRow(['Appointment Date', 'Student No.', 'Student', 'Department', 'Grade Level', 'Section', 'Counselor', 'Status']);
+    headerRow.eachCell((cell) => {
+      Object.assign(cell.style, headerStyle);
+    });
 
-  //   worksheet.addRow(['', 'Generated On:', new Date().toLocaleDateString()]); 
-  //   worksheet.addRow(['', 'Prepared By:', currentUser.email]);
+    sched.forEach((sched) => {
+      const formattedDate = new Date(sched.start.seconds * 1000).toLocaleDateString('en-US');
+      const row = worksheet.addRow([
+        formattedDate,
+        sched.studentNo,
+        sched.fullName,
+        sched.department || "n/a",
+        sched.gradeLevel,
+        sched.section,
+        sched.counselorName,
+        sched.status,
+      ]);
 
-  //   worksheet.columns.forEach(column => {
-  //     let maxLength = 0;
-  //     column.eachCell((cell) => {
-  //       maxLength = Math.max(maxLength, cell.value ? cell.value.toString().length : 0);
-  //     });
-  //     column.width = maxLength + 2; 
-  //   });
+      row.eachCell((cell, colNumber) => {
+        if (colNumber === 8) { 
+          if (sched.status === "pending") {
+            Object.assign(cell.style, pendingCellStyle);
+          } else if (sched.status === "approved") {
+            Object.assign(cell.style, approvedCellStyle);
+          } else if (sched.status === "rescheduled") {
+            Object.assign(cell.style, rescheduledCellStyle);
+          } else if (sched.status === "finished") {
+            Object.assign(cell.style, finishedCellStyle);
+          } else if (sched.status === "did not respond") {
+            Object.assign(cell.style, dnrCellStyle);
+          }
+        } else {
+          Object.assign(cell.style, dataCellStyle);
+        }
+      });
+    });
 
-  //   const buffer = await workbook.xlsx.writeBuffer();
-  //   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  //   saveAs(blob, `${classData.sectionName}_${selectedSubject}_clearance.xlsx`);
-  // };
+    worksheet.addRow([]);
+
+    worksheet.addRow(['', 'Generated On:', new Date().toLocaleDateString()]); 
+    worksheet.addRow(['', 'Prepared By:', currentUser.email]);
+
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell((cell) => {
+        maxLength = Math.max(maxLength, cell.value ? cell.value.toString().length : 0);
+      });
+      column.width = maxLength + 2; 
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `guidance_reports.xlsx`);
+  };
 
   return (
     <Sidebar>
@@ -528,7 +561,7 @@ function GuidanceReports() {
                 <motion.button
                   whileHover={{scale: 1.03}}
                   whileTap={{scale: 0.95}}                    
-                  onClick={() => console.log("dsd")}
+                  onClick={handleExportExcel}
                   className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                 >
                   Export to Excel
@@ -543,7 +576,6 @@ function GuidanceReports() {
               <div className="hidden show-on-print">
                 <div className="flex justify-center py-3 text-xl font-bold bg-gray-300 mb-2">
                   <p>Guidance Reports</p>
-
                 </div>
               </div>
 
