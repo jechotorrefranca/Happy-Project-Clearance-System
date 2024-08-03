@@ -15,6 +15,7 @@ import {
   doc,
   deleteDoc, 
   onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import SidebarStudent from "../components/SidebarStudent";
@@ -238,7 +239,6 @@ const StudentClearance = () => {
       setSubmitType('submit');
       setModalSubject(subject);
       setSelectedSubject(selectedSubject === subject ? null : subject);
-      console.log(selectedSubject)
       };
 
 
@@ -263,8 +263,6 @@ const StudentClearance = () => {
       setModalSubjectOffice(subject);
       setSelectedSubjectOffice(selectedSubject === subject ? null : subject);
       setForOfficeUIDSubject(subject);
-      // updateTeacherUID();
-      console.log(selectedSubjectOffice);
       };
 
   const handleFileChange = (e) => {
@@ -375,8 +373,6 @@ const StudentClearance = () => {
     setSubjectType(type);
     setSubjectToResubmit(subject);
     setIsResubmitModalOpen(true);
-    console.log(subject);
-    console.log(type);
   };
 
   const closeResubmitModal = () => {
@@ -384,15 +380,38 @@ const StudentClearance = () => {
     setIsResubmitModalOpen(false);
   };
 
-
   const [teacherUid, setTeacherUid] = useState(null)
 
+  // Update read status function
+  const markAsRead = async (subjectInq) => {
+    try {
+      if (!currentUser || !subjectInq) {
+        return;
+      }
 
-  const setInquiryModal = (uid) => {
-    console.log(currentUser.uid);
+      const inquiryCollectionRef = collection(db, 'inquiries');
+      const q = query(inquiryCollectionRef,
+        where('subject', '==', subjectInq),
+        where('recipientId', '==', currentUser.uid)
+      );
+
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach(async (doc) => {
+        const docRef = doc.ref;
+        await updateDoc(docRef, {
+          read: true
+        });
+      });
+    } catch (error) {
+      console.error('Error marking inquiries as read:', error);
+    }
+  };
+
+  const setInquiryModal = (uid, inqsub) => {
     updateTeacherUID();
     setTeacherUid(uid);
     setInquiry(!inquiry);
+    markAsRead(inqsub);
   }
 
   const handleResubmitClearance = async (subject, type) => {
@@ -1063,7 +1082,7 @@ const StudentClearance = () => {
       {inquiry && (
         <>
           {selectedSubject && (
-            <ChatDesign handleClose={() => setInquiryModal(null)} subject={selectedSubject} facultyUid={teacherUid} defaultFacultyId={teacherUid} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
+            <ChatDesign handleClose={() => setInquiryModal(null, selectedSubject)} subject={selectedSubject} facultyUid={teacherUid} defaultFacultyId={teacherUid} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
               {inquiryData.map((inquiry) => (
                 <UserChatDesign
                   talkingTo={selectedSubject}
@@ -1078,7 +1097,7 @@ const StudentClearance = () => {
           )}
           
           {selectedSubjectOffice && (
-            <ChatDesign handleClose={() => setInquiryModal(null)} subject={selectedSubjectOffice} facultyUid={teacherUID} defaultFacultyId={teacherUID} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
+            <ChatDesign handleClose={() => setInquiryModal(null, selectedSubjectOffice)} subject={selectedSubjectOffice} facultyUid={teacherUID} defaultFacultyId={teacherUID} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
               {inquiryData.map((inquiry) => (
                 <UserChatDesign
                   talkingTo={selectedSubjectOffice}
