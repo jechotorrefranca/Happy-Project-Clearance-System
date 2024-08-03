@@ -668,21 +668,37 @@ function GuidanceReports() {
               </motion.button>
             </div>
 
-            <ReactToPrint
-              trigger={() => (
-                <motion.button
-                className="p-3 w-full rounded flex justify-center items-center bg-[#C88CFF] hover:bg-[#b17ce2] mt-3"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handlePrint}
+            <div className="border-b-green-700 border-b-2 my-4"/>
+
+            <div className="mt-6 flex justify-around gap-2">
+              <motion.button
+                whileHover={{scale: 1.03}}
+                whileTap={{scale: 0.95}}
+                
+                onClick={handleModal}
+                className="p-3 w-full rounded flex justify-center items-center bg-gray-400 text-white font-semibold hover:bg-gray-500"
                 >
-                  Continue
-                </motion.button>
-              )}
-              content={() => componentRef.current}
-              onBeforeGetContent={handlePrint}
-              onAfterPrint={handleAfterPrint}
-            />
+                Cancel
+              </motion.button>
+
+              <ReactToPrint
+                trigger={() => (
+                  <motion.button
+                  className="p-3 w-full rounded flex justify-center items-center bg-[#C88CFF] hover:bg-[#b17ce2]"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handlePrint}
+                  >
+                    Continue
+                  </motion.button>
+                )}
+                content={() => componentRef.current}
+                onBeforeGetContent={handlePrint}
+                onAfterPrint={handleAfterPrint}
+              />
+              
+            </div>
+
 
         </div>
         

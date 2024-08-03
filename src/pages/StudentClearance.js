@@ -1063,7 +1063,7 @@ const StudentClearance = () => {
       {inquiry && (
         <>
           {selectedSubject && (
-            <ChatDesign handleClose={() => setInquiryModal(false)} subject={selectedSubject} facultyUid={teacherUid} defaultFacultyId={teacherUid} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
+            <ChatDesign handleClose={() => setInquiryModal(null)} subject={selectedSubject} facultyUid={teacherUid} defaultFacultyId={teacherUid} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
               {inquiryData.map((inquiry) => (
                 <UserChatDesign
                   talkingTo={selectedSubject}
@@ -1078,7 +1078,7 @@ const StudentClearance = () => {
           )}
           
           {selectedSubjectOffice && (
-            <ChatDesign handleClose={() => setInquiryModal(false)} subject={selectedSubjectOffice} facultyUid={teacherUID} defaultFacultyId={teacherUid} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
+            <ChatDesign handleClose={() => setInquiryModal(null)} subject={selectedSubjectOffice} facultyUid={teacherUID} defaultFacultyId={teacherUID} studentName={studentData.fullName} defaultStudentId={currentUser.uid}>
               {inquiryData.map((inquiry) => (
                 <UserChatDesign
                   talkingTo={selectedSubjectOffice}
