@@ -359,8 +359,11 @@ function GuidanceReports() {
 
     worksheet.addRow([]);
 
-    worksheet.addRow(['', 'Generated On:', new Date().toLocaleDateString()]); 
-    worksheet.addRow(['', 'Prepared By:', currentUser.email]);
+    worksheet.getCell('G' + (worksheet.rowCount + 1)).value = 'Generated On:';
+    worksheet.getCell('H' + (worksheet.rowCount)).value = new Date().toLocaleDateString();
+    
+    worksheet.getCell('G' + (worksheet.rowCount + 1)).value = 'Prepared By:';
+    worksheet.getCell('H' + (worksheet.rowCount)).value = currentUser.email;
 
     worksheet.columns.forEach(column => {
       let maxLength = 0;
