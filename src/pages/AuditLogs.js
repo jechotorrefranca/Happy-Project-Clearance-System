@@ -13,6 +13,71 @@ function AuditLogs() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = logs.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(logs.length / itemsPerPage);
+
+  const pageNumbers = [];
+  for (let i = 1; i <= Math.ceil(logs.length / itemsPerPage); i++) {
+    pageNumbers.push(i);
+  }
+
+  const renderPageNumbers = () => {
+    const totalPages = Math.ceil(logs.length / itemsPerPage);
+    const maxDisplayedPages = 7;
+    const startPage = Math.max(1, currentPage - Math.floor(maxDisplayedPages / 2));
+    const endPage = Math.min(totalPages, startPage + maxDisplayedPages - 1);
+  
+    let pages = [];
+  
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key="first"
+          onClick={() => setCurrentPage(1)}
+          className={`mx-1 px-3 py-1 border rounded ${currentPage === 1 ? "bg-blue-400 text-white" : ""}`}
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        pages.push(<span key="ellipsis1" className="mx-1">...</span>);
+      }
+    }
+  
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => setCurrentPage(i)}
+          className={`mx-1 px-3 py-1 border rounded ${currentPage === i ? "bg-blue-400 text-white" : ""}`}
+        >
+          {i}
+        </button>
+      );
+    }
+  
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(<span key="ellipsis2" className="mx-1">...</span>);
+      }
+      pages.push(
+        <button
+          key="last"
+          onClick={() => setCurrentPage(totalPages)}
+          className={`mx-1 px-3 py-1 border rounded ${currentPage === totalPages ? "bg-blue-400 text-white" : ""}`}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+  
+    return pages;
+  };
+
   useEffect(() => {
     const fetchLogs = async () => {
       try {
@@ -168,7 +233,7 @@ function AuditLogs() {
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map((log) => (
+                  {currentItems.map((log) => (
                     <tr key={log.id} className="hover:bg-blue-100 bg-blue-50">
                       <td className="py-2 px-4 border-b border-gray-200">{moment(log.timestamp.toDate()).format("YYYY-MM-DD HH:mm:ss")}</td>
                       <td className="py-2 px-4 border-b border-gray-200">{log.userId}</td>
@@ -180,6 +245,12 @@ function AuditLogs() {
               </table>
 
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-4">
+                {renderPageNumbers()}
+              </div>
+            )}
 
 
           </div>
