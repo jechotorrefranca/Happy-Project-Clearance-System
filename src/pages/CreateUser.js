@@ -13,6 +13,7 @@ import 'react-toastify/dist/ReactToastify.css';
 function CreateUser() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [counselorname, setCounselorname] = useState("");
   const [role, setRole] = useState("");
   const [department, setDepartment] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
@@ -87,7 +88,8 @@ function CreateUser() {
             ? department
             : null,
         educationLevel: educationLevel,
-        isLocked: false, 
+        isLocked: false,
+        ...(role === "Guidance Office" && { counselorName: counselorname })
       });
 
       const auditLogsRef = collection(db, "auditLogs");
@@ -110,6 +112,7 @@ function CreateUser() {
       setRole('');
       setDepartment('');
       setEducationLevel('');
+      setCounselorname('');
     } catch (error) {
       console.error("Error creating user: ", error);
       showFailedToast("Error creating user. Please try again");
@@ -252,6 +255,23 @@ function CreateUser() {
                   )}
 
               </div>
+
+              {role === "Guidance Office" &&(
+                <div className="mb-4 sm:flex gap-4">
+                  <div className="w-full bg-blue-100 p-5 rounded mb-2 sm:mb-0">
+                      <label className="block text-gray-700">Counselor Name:</label>
+                      <input
+                        type="text"
+                        value={counselorname}
+                        onChange={(e) => setCounselorname(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                      />
+                    </div>
+
+                </div>
+              )}
+
 
               
                 <div className="flex justify-center">
