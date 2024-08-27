@@ -27,7 +27,7 @@ function AuditLogs() {
 
   const renderPageNumbers = () => {
     const totalPages = Math.ceil(logs.length / itemsPerPage);
-    const maxDisplayedPages = 7;
+    const maxDisplayedPages = 6;
     const startPage = Math.max(1, currentPage - Math.floor(maxDisplayedPages / 2));
     const endPage = Math.min(totalPages, startPage + maxDisplayedPages - 1);
   
@@ -38,7 +38,7 @@ function AuditLogs() {
         <button
           key="first"
           onClick={() => setCurrentPage(1)}
-          className={`mx-1 px-3 py-1 border rounded ${currentPage === 1 ? "bg-blue-400 text-white" : ""}`}
+          className={`mx-1 px-3 py-1 border border-blue-300 rounded ${currentPage === 1 ? "bg-blue-400 text-white" : ""}`}
         >
           1
         </button>
@@ -53,7 +53,7 @@ function AuditLogs() {
         <button
           key={i}
           onClick={() => setCurrentPage(i)}
-          className={`mx-1 px-3 py-1 border rounded ${currentPage === i ? "bg-blue-400 text-white" : ""}`}
+          className={`mx-1 px-3 py-1 border border-blue-300 rounded ${currentPage === i ? "bg-blue-400 text-white" : ""}`}
         >
           {i}
         </button>
@@ -68,7 +68,7 @@ function AuditLogs() {
         <button
           key="last"
           onClick={() => setCurrentPage(totalPages)}
-          className={`mx-1 px-3 py-1 border rounded ${currentPage === totalPages ? "bg-blue-400 text-white" : ""}`}
+          className={`mx-1 px-3 py-1 border border-blue-300 rounded ${currentPage === totalPages ? "bg-blue-400 text-white" : ""}`}
         >
           {totalPages}
         </button>
@@ -246,14 +246,14 @@ function AuditLogs() {
 
             </div>
 
+
+
+          </div>
             {totalPages > 1 && (
               <div className="flex justify-center mt-4">
                 {renderPageNumbers()}
               </div>
             )}
-
-
-          </div>
         </div>
 
 
