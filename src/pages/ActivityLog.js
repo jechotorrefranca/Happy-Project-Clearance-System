@@ -107,7 +107,6 @@ function ActivityLog({ role }) {
 
       setLogs(logsData);
       setOriginalLogs(logsData);
-      console.log("Fetched logs:", logsData);
     } catch (error) {
       console.error("Error fetching logs:", error);
     } finally {
