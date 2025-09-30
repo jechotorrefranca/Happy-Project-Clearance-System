@@ -194,9 +194,15 @@ function ActivityLog({ role }) {
 
   const formatActionType = (actionType) => {
     const action = actionTypes.find((a) => a.value === actionType);
-    return action
+    let label = action
       ? action.label
       : actionType.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+
+    if (actionType === "submit" || actionType === "resubmit") {
+      label = `Clearance ${label}`;
+    }
+
+    return label;
   };
 
   const LogCard = ({ log }) => (
