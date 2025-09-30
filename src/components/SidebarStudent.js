@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { useAuth } from '../components/AuthContext';
-import { motion } from 'framer-motion';
+import { useAuth } from "../components/AuthContext";
+import { motion } from "framer-motion";
 import {
   Bars3Icon,
   XMarkIcon,
@@ -12,13 +12,10 @@ import {
   BellIcon,
   LockClosedIcon,
   UserGroupIcon,
-  EnvelopeOpenIcon
+  EnvelopeOpenIcon,
 } from "@heroicons/react/24/outline";
 
-import {
-  BellAlertIcon,
-  EnvelopeIcon
-} from "@heroicons/react/24/solid";
+import { BellAlertIcon, EnvelopeIcon } from "@heroicons/react/24/solid";
 
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import {
@@ -38,13 +35,49 @@ const auth = getAuth();
 const db = getFirestore();
 
 const initialNavigation = [
-  { name: "Dashboard", href: "/studentdashboard", icon: HomeIcon, current: false },
-  { name: "Clearance", href: "/student-clearance", icon: DocumentCheckIcon, current: false},
-  { name: "Guidance Counseling", href: "/student-guidance", icon: UserGroupIcon, current: false},
-  { name: "Notification", href: "/notifications", icon: BellIcon, current: false},
-  { name: "Messages", href: "/view-messages-student", icon: EnvelopeOpenIcon, current: false },
-  { name: "Activity Log", href: "/activitylog", icon: ClipboardDocumentListIcon, current: false },
-  { name: "Change Password", href: "/changepassword", icon: LockClosedIcon, current: false, children: [] },
+  {
+    name: "Dashboard",
+    href: "/studentdashboard",
+    icon: HomeIcon,
+    current: false,
+  },
+  {
+    name: "Clearance",
+    href: "/student-clearance",
+    icon: DocumentCheckIcon,
+    current: false,
+  },
+  {
+    name: "Guidance Counseling",
+    href: "/student-guidance",
+    icon: UserGroupIcon,
+    current: false,
+  },
+  {
+    name: "Notification",
+    href: "/notifications",
+    icon: BellIcon,
+    current: false,
+  },
+  {
+    name: "Messages",
+    href: "/view-messages-student",
+    icon: EnvelopeOpenIcon,
+    current: false,
+  },
+  {
+    name: "Activity Log",
+    href: "/activitylog",
+    icon: ClipboardDocumentListIcon,
+    current: false,
+  },
+  {
+    name: "Change Password",
+    href: "/changepassword",
+    icon: LockClosedIcon,
+    current: false,
+    children: [],
+  },
 ];
 
 function classNames(...classes) {
@@ -61,71 +94,74 @@ export default function SidebarStudent({ children }) {
   const location = useLocation();
   const [notification, setNotification] = useState([]);
   const [messages, setMessages] = useState([]);
-  const filteredItems = navigation.filter(item => item.name !== "Notification" && item.name !== "Messages");
+  const filteredItems = navigation.filter(
+    (item) => item.name !== "Notification" && item.name !== "Messages"
+  );
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (
-      dropdownRef.current &&
-      !dropdownRef.current.contains(event.target) &&
-      event.target.closest('.dropdown-toggle') === null
-    ) {
-      setDropdownOpen(false);    
-    }
-  };
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        event.target.closest(".dropdown-toggle") === null
+      ) {
+        setDropdownOpen(false);
+      }
+    };
 
-  window.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener("mousedown", handleClickOutside);
 
-  return () => {
-    window.removeEventListener('mousedown', handleClickOutside);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
-useEffect(() => {
-  if (!currentUser) return;
+  useEffect(() => {
+    if (!currentUser) return;
 
-  const notifCollectionRef = collection(db, 'studentNotification');
-  const q = query(notifCollectionRef, 
-    where("studentId", "==", currentUser.uid), 
-    where("isRead", "==", false)
-  );
+    const notifCollectionRef = collection(db, "studentNotification");
+    const q = query(
+      notifCollectionRef,
+      where("studentId", "==", currentUser.uid),
+      where("isRead", "==", false)
+    );
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    if (!snapshot.empty) {
-      const notifications = snapshot.docs.map((doc) => doc.data());
-      setNotification(notifications);
-    } else {
-      setNotification([]);
-    }
-  });
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const notifications = snapshot.docs.map((doc) => doc.data());
+        setNotification(notifications);
+      } else {
+        setNotification([]);
+      }
+    });
 
-  return () => unsubscribe();
-}, [currentUser]);
+    return () => unsubscribe();
+  }, [currentUser]);
 
-useEffect(() => {
-  if (!currentUser) return;
+  useEffect(() => {
+    if (!currentUser) return;
 
-  const msgCollectionRef = collection(db, 'inquiries');
-  const q = query(msgCollectionRef, 
-    where("recipientId", "==", currentUser.uid), 
-    where("read", "==", false)
-  );
+    const msgCollectionRef = collection(db, "inquiries");
+    const q = query(
+      msgCollectionRef,
+      where("recipientId", "==", currentUser.uid),
+      where("read", "==", false)
+    );
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    if (!snapshot.empty) {
-      const messages = snapshot.docs.map((doc) => doc.data());
-      setMessages(messages);
-    } else {
-      setMessages([]);
-    }
-  });
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const messages = snapshot.docs.map((doc) => doc.data());
+        setMessages(messages);
+      } else {
+        setMessages([]);
+      }
+    });
 
-  return () => unsubscribe();
-}, [currentUser]);
-
+    return () => unsubscribe();
+  }, [currentUser]);
 
   useEffect(() => {
     onAuthStateChanged(auth, async (user) => {
@@ -152,7 +188,6 @@ useEffect(() => {
       }
     });
   }, [userRole]);
-  
 
   useEffect(() => {
     const updatedNavigation = initialNavigation.map((item) => {
@@ -175,10 +210,9 @@ useEffect(() => {
         };
       }
     });
-  
+
     setNavigation(updatedNavigation);
   }, [location.pathname, notification, messages]);
-  
 
   const handleLogout = async () => {
     try {
@@ -205,7 +239,6 @@ useEffect(() => {
       .slice(0, 2)
       .join("");
   };
-  
 
   return (
     <>
@@ -332,39 +365,41 @@ useEffect(() => {
                     <ul className="flex flex-1 flex-col gap-y-7">
                       <li>
                         <ul className="-mx-2 space-y-1">
-                        {navigation.map((item) => {
-                          const iconClass = item.icon === EnvelopeIcon ? 'text-red-400' : (item.current ? 'text-[#494124]' : 'text-gray-400 group-hover:text-[#494124]');
+                          {navigation.map((item) => {
+                            const iconClass =
+                              item.icon === EnvelopeIcon
+                                ? "text-red-400"
+                                : item.current
+                                ? "text-[#494124]"
+                                : "text-gray-400 group-hover:text-[#494124]";
 
-                          return (
-                            <li key={item.name}>
-                              <a
-                                href={item.href}
-                                className={classNames(
-                                  item.current
-                                    ? "bg-[#fff2c1] text-[#494124]"
-                                    : "text-gray-700 hover:text-[#494124] hover:bg-[#fffbec]",
-                                  "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
-                                )}
-                              >
-                                <item.icon
+                            return (
+                              <li key={item.name}>
+                                <a
+                                  href={item.href}
                                   className={classNames(
-                                    iconClass,
-                                    "h-6 w-6 shrink-0"
+                                    item.current
+                                      ? "bg-[#fff2c1] text-[#494124]"
+                                      : "text-gray-700 hover:text-[#494124] hover:bg-[#fffbec]",
+                                    "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                                   )}
-                                  aria-hidden="true"
-                                />
-                                {item.name}
-                              </a>
-                            </li>
-                          );
-                        })}
-
+                                >
+                                  <item.icon
+                                    className={classNames(
+                                      iconClass,
+                                      "h-6 w-6 shrink-0"
+                                    )}
+                                    aria-hidden="true"
+                                  />
+                                  {item.name}
+                                </a>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </li>
                       <li className="-mx-6 mt-auto">
-                        <div
-                          className="relative"
-                        >
+                        <div className="relative">
                           <button
                             onClick={() => setDropdownOpen(!dropdownOpen)}
                             className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-blue-300 w-full transition"
@@ -377,23 +412,23 @@ useEffect(() => {
                               {currentUser?.email || "User"}{" "}
                             </span>{" "}
                           </button>
-                          
+
                           {dropdownOpen && (
                             <motion.div
-                            ref={dropdownRef}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute right-2 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5"
-                          >
-                            <button
-                              className="dropdown-toggle block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                              onClick={handleLogout}
+                              ref={dropdownRef}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.9 }}
+                              transition={{ duration: 0.2 }}
+                              className="absolute right-2 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5"
                             >
-                              Logout
-                            </button>
-                          </motion.div>
+                              <button
+                                className="dropdown-toggle block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                onClick={handleLogout}
+                              >
+                                Logout
+                              </button>
+                            </motion.div>
                           )}
                         </div>
                       </li>
@@ -419,31 +454,31 @@ useEffect(() => {
 
               <a href="/notifications">
                 <span className="sr-only">Notification</span>
-                  <motion.div 
-                  whileHover={{scale: 1.1, backgroundColor: '#eeeee4'}}
-                  whileTap={{scale: 0.80}}
-                  
-                  className="flex items-center rounded-full p-1 text-sm font-semibold text-gray-800">
-                    {notification.length > 0 ? (
-                      <BellAlertIcon className="h-6 w-6 text-red-400" />
-                    ) : (
-                      <BellIcon className="h-6 w-6" />
-                    )}
+                <motion.div
+                  whileHover={{ scale: 1.1, backgroundColor: "#eeeee4" }}
+                  whileTap={{ scale: 0.8 }}
+                  className="flex items-center rounded-full p-1 text-sm font-semibold text-gray-800"
+                >
+                  {notification.length > 0 ? (
+                    <BellAlertIcon className="h-6 w-6 text-red-400" />
+                  ) : (
+                    <BellIcon className="h-6 w-6" />
+                  )}
                 </motion.div>
               </a>
 
               <a href="/view-messages-student">
                 <span className="sr-only">Messages</span>
-                  <motion.div 
-                  whileHover={{scale: 1.1, backgroundColor: '#eeeee4'}}
-                  whileTap={{scale: 0.80}}
-                  
-                  className="flex items-center rounded-full p-1 text-sm font-semibold text-gray-800">
-                    {messages.length > 0 ? (
-                      <EnvelopeIcon className="h-6 w-6 text-red-400" />
-                    ) : (
-                      <EnvelopeOpenIcon className="h-6 w-6" />
-                    )}
+                <motion.div
+                  whileHover={{ scale: 1.1, backgroundColor: "#eeeee4" }}
+                  whileTap={{ scale: 0.8 }}
+                  className="flex items-center rounded-full p-1 text-sm font-semibold text-gray-800"
+                >
+                  {messages.length > 0 ? (
+                    <EnvelopeIcon className="h-6 w-6 text-red-400" />
+                  ) : (
+                    <EnvelopeOpenIcon className="h-6 w-6" />
+                  )}
                 </motion.div>
               </a>
 
@@ -476,7 +511,6 @@ useEffect(() => {
                 )}
               </div>
             </div>
-            
 
             <main className="py-10 lg:pl-72 bg-white">
               <div className="px-4 sm:px-6 lg:px-8">{children}</div>
